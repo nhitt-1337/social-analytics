@@ -13,17 +13,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+// Mọi endpoint đều yêu cầu đăng nhập; test này nhắm vào hành vi của API nên giả lập sẵn
+// một người dùng thay vì đi qua luồng OAuth2 thật.
+@WithMockUser
 class MetricControllerIntegrationTest {
 
     @Autowired MockMvc mvc;
@@ -70,7 +75,7 @@ class MetricControllerIntegrationTest {
 
     @Test
     void recordReturns201AndDefaultsCollectedAtToNow() throws Exception {
-        mvc.perform(post("/api/v1/metrics").contextPath("/api/v1").servletPath("/metrics")
+        mvc.perform(post("/api/v1/metrics").contextPath("/api/v1").servletPath("/metrics").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(body(post.getId(), 100)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.postId").value(post.getId()))
@@ -119,7 +124,7 @@ class MetricControllerIntegrationTest {
 
     @Test
     void recordForUnknownPostReturns404() throws Exception {
-        mvc.perform(post("/api/v1/metrics").contextPath("/api/v1").servletPath("/metrics")
+        mvc.perform(post("/api/v1/metrics").contextPath("/api/v1").servletPath("/metrics").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(body(999999L, 10)))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.error.message").value("Không tìm thấy bài viết"));
@@ -127,7 +132,7 @@ class MetricControllerIntegrationTest {
 
     @Test
     void negativeLikesReturns422() throws Exception {
-        mvc.perform(post("/api/v1/metrics").contextPath("/api/v1").servletPath("/metrics")
+        mvc.perform(post("/api/v1/metrics").contextPath("/api/v1").servletPath("/metrics").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"postId\":%d,\"likes\":-5,\"shares\":0,\"followers\":0}".formatted(post.getId())))
             .andExpect(status().isUnprocessableEntity())
@@ -140,7 +145,7 @@ class MetricControllerIntegrationTest {
         saveMetric(10, LocalDateTime.now());
 
         mvc.perform(delete("/api/v1/posts/" + post.getId())
-                .contextPath("/api/v1").servletPath("/posts/" + post.getId()))
+                .contextPath("/api/v1").servletPath("/posts/" + post.getId()).with(csrf()))
             .andExpect(status().isNoContent());
 
         mvc.perform(get("/api/v1/metrics").contextPath("/api/v1").servletPath("/metrics")

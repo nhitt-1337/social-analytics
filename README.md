@@ -12,7 +12,7 @@ Xây bằng **Spring Boot 4.1 / Java 21 / MySQL 8.4**.
 
 ## 1. Tình trạng
 
-Giai đoạn hiện tại: **Unit Test + Import/Export Excel**.
+Giai đoạn hiện tại: **Bảo mật & CSRF + Social Login**.
 
 | Hạng mục | Trạng thái |
 |---|---|
@@ -21,13 +21,13 @@ Giai đoạn hiện tại: **Unit Test + Import/Export Excel**.
 | API CRUD `/posts`, `/metrics` | ✅ |
 | Swagger / OpenAPI | ✅ |
 | `application.yaml` + cấu hình logging | ✅ |
-| Social Login (FB, TW) | ⏳ bước sau |
+| Spring Security, CSRF, trang dashboard | ✅ |
+| Social Login OAuth2 (Facebook, X/Twitter) | ✅ |
 | Import/Export Excel bằng Apache POI + Reflection | ✅ |
 | Unit test Service & Controller, `@DataJpaTest` | ✅ |
 | Background job crawl (Multithreading, JMS) | ⏳ |
 | Biểu đồ Chart.js | ⏳ |
 | WebSocket realtime | ⏳ |
-| Bảo mật CSRF | ⏳ |
 
 ## 2. Chạy
 
@@ -48,6 +48,9 @@ Schema do Hibernate `ddl-auto: update` tự tạo lúc khởi động.
 
 ## 3. API
 
+Toàn bộ endpoint đều **yêu cầu đăng nhập**. Chưa đăng nhập thì:
+API (nhận JSON) trả **401**, còn trang HTML bị chuyển hướng về `/login`.
+
 | Method | Endpoint | Mô tả |
 |---|---|---|
 | GET | `/posts` | Danh sách bài viết (`?platform=facebook&page=1&limit=20`), kèm số liệu mới nhất |
@@ -62,6 +65,15 @@ Schema do Hibernate `ddl-auto: update` tự tạo lúc khởi động.
 | DELETE | `/metrics/{id}` | Xoá một lần đo → 204 |
 | POST | `/import-posts?userId=` | Nhập bài viết từ file Excel (multipart, part tên `file`) |
 | GET | `/export-report?platform=&from=&to=` | Xuất báo cáo tương tác ra file `.xlsx` |
+
+Trang HTML (Thymeleaf):
+
+| Method | Endpoint | Mô tả |
+|---|---|---|
+| GET | `/login` | Trang đăng nhập, công khai |
+| GET | `/dashboard` | Dashboard sau khi đăng nhập |
+| POST | `/dashboard/note` | Form demo CSRF |
+| POST | `/logout` | Đăng xuất (phải là POST kèm token) |
 
 **Định dạng response.** Danh sách phân trang trả `{ data, total, page, limit }`, danh sách thường
 trả `{ data: [...] }`. Lỗi dùng chung một khuôn:
@@ -142,21 +154,98 @@ Giới hạn: đọc tối đa `ExcelMapper.MAX_DATA_ROWS` = 5.000 dòng, xuất
 `ReportExportService.MAX_EXPORT_ROWS` = 10.000 dòng; dung lượng upload theo `MAX_FILE_SIZE`
 (mặc định 10MB).
 
-## 5. Kiểm thử
+## 5. Bảo mật & Social Login
+
+### Cấu hình
+
+Không đặt biến môi trường thì app vẫn chạy bình thường, chỉ là trang `/login` không có nút nào
+(`SecurityConfig` bỏ qua phần `oauth2Login` khi không có `ClientRegistrationRepository`).
+
+```bash
+export FACEBOOK_CLIENT_ID=...   FACEBOOK_CLIENT_SECRET=...
+export X_CLIENT_ID=...          X_CLIENT_SECRET=...
+./mvnw spring-boot:run
+```
+
+Redirect URI phải khai **đúng y hệt** bên trang quản trị ứng dụng của nhà cung cấp — chú ý tiền
+tố `/api/v1` do `server.servlet.context-path`:
+
+```
+http://localhost:8080/api/v1/login/oauth2/code/facebook
+http://localhost:8080/api/v1/login/oauth2/code/x
+```
+
+### CSRF
+
+Bật cho toàn ứng dụng. Token để trong cookie `XSRF-TOKEN` **không đặt HttpOnly** để JavaScript
+đọc được — nhờ vậy form thường và lời gọi `fetch` dùng chung một cơ chế:
+
+- **Form Thymeleaf**: dùng `th:action` + `method="post"` là Thymeleaf tự chèn
+  `<input type="hidden" name="_csrf">`.
+- **JavaScript**: tự đọc cookie rồi gắn vào header `X-XSRF-TOKEN` (xem `static/js/app.js`).
+
+Thứ tự filter quyết định mã lỗi trả về — thử bằng `curl` sẽ thấy rõ:
+
+```bash
+# Thiếu token -> 403, CsrfFilter chặn TRƯỚC cả bước kiểm tra đăng nhập
+curl -X POST localhost:8080/api/v1/posts -H 'Accept: application/json' -d '{}'      # 403
+
+# Có token nhưng chưa đăng nhập -> 401, tức là đã qua được CSRF
+curl -X POST localhost:8080/api/v1/posts -H "X-XSRF-TOKEN: $TOKEN" -b cookies.txt   # 401
+```
+
+Từ Spring Security 6, token CSRF được nạp **lười**: không chỗ nào đọc tới thì cookie không bao giờ
+được gửi về trình duyệt. `SecurityConfig.CsrfCookieFilter` chạm vào token ở mọi request để cookie
+luôn có mặt ngay từ lần tải trang đầu tiên.
+
+### Hai chỗ dễ vấp
+
+- **X (Twitter) bắt buộc PKCE.** Spring Security chỉ tự bật PKCE cho client *không có* client
+  secret; X thì có secret nhưng vẫn đòi PKCE. Vì vậy `SecurityConfig` bật tay bằng
+  `OAuth2AuthorizationRequestCustomizers.withPkce()`. Thiếu dòng này thì X báo lỗi ngay ở bước
+  đầu tiên và rất khó lần ra nguyên nhân. Có test riêng cho nó (`OAuth2LoginTest#batPkceChoX`).
+- **`/2/users/me` của X trả JSON lồng trong `data`**, trong khi `DefaultOAuth2UserService` tìm
+  thuộc tính ở tầng ngoài cùng nên không thấy `username`. `SocialUserAttributes` gỡ lớp bọc này.
+
+### Lưu token & thông tin user
+
+- **Thông tin user** → bảng `users`. `SocialLoginUserService` tạo mới ở lần đăng nhập đầu, các lần
+  sau chỉ cập nhật hồ sơ. Đã có tài khoản `LOCAL` trùng email thì gắn danh tính mạng xã hội vào
+  chính tài khoản đó; **không** gắn đè lên tài khoản đã liên kết nhà cung cấp khác (mở đường
+  chiếm tài khoản).
+- **Access token / refresh token** → bảng `oauth2_authorized_clients`, qua
+  `JpaOAuth2AuthorizedClientService`. Bản mặc định của Spring Security chỉ giữ token trong bộ nhớ:
+  khởi động lại là mất, và tiến trình nền không đọc được. Job crawl ở bước sau chạy ngoài phiên
+  đăng nhập nhưng vẫn cần token để gọi API Facebook/X.
+
+> **Lưu ý khi nâng cấp từ bản trước.** Cột `users.email` chuyển sang cho phép `NULL` vì X không trả
+> về email. `ddl-auto: update` của Hibernate **không** nới lỏng ràng buộc `NOT NULL` sẵn có, nên
+> trên database cũ phải chạy tay một lần:
+>
+> ```sql
+> ALTER TABLE users MODIFY email VARCHAR(255) NULL;
+> ```
+>
+> Hoặc dựng lại từ đầu: `docker compose down -v && docker compose up -d`.
+> Bỏ qua bước này thì đăng nhập bằng X sẽ lỗi `Field 'email' doesn't have a default value`.
+
+## 6. Kiểm thử
 
 ```bash
 ./mvnw test
 ```
 
-**136 test**, chạy trên H2 ở `MODE=MySQL` — không cần dựng MySQL thật.
+**190 test**, chạy trên H2 ở `MODE=MySQL` — không cần dựng MySQL thật.
 
 | Tầng | Kiểu test | Lớp test |
 |---|---|---|
-| Engine Excel | JUnit5 thuần | `ExcelMapperTest` (16) |
-| Service | JUnit5 + Mockito | `PostServiceTest` (16), `MetricServiceTest` (13), `PostImportServiceTest` (12), `ReportExportServiceTest` (11) |
+| Engine Excel | JUnit5 thuần | `ExcelMapperTest` (17) |
+| Service | JUnit5 + Mockito | `PostServiceTest` (16), `MetricServiceTest` (13), `PostImportServiceTest` (13), `ReportExportServiceTest` (11) |
 | Repository | `@DataJpaTest` | `PostRepositoryTest` (11), `SocialMetricRepositoryTest` (9) |
 | Controller (lát cắt web) | `@WebMvcTest` + `@MockitoBean` | `PostControllerTest` (17) |
 | Đầu-cuối | `@SpringBootTest` + `MockMvc` | `PostControllerIntegrationTest` (8), `MetricControllerIntegrationTest` (7), `ExcelControllerIntegrationTest` (16) |
+| Bảo mật | `@SpringBootTest` + `MockMvc` | `SecurityRulesTest` (16), `OAuth2LoginTest` (9), `CsrfCookieTest` (1) |
+| Social Login | Mockito / `@DataJpaTest` | `SocialUserAttributesTest` (10), `SocialLoginUserServiceTest` (8), `JpaOAuth2AuthorizedClientServiceTest` (8) |
 
 Quy ước đã áp dụng:
 
@@ -171,8 +260,18 @@ Quy ước đã áp dụng:
   lực — mock repository không bao giờ phát hiện được hai thứ này.
 - Helper dùng chung ở `src/test/java/.../support/`: `TestEntities` (dựng entity, gán `id` bằng
   `ReflectionTestUtils` vì entity không có setter cho `id`), `ExcelTestFiles` (dựng/đọc `.xlsx`).
+- Test bảo mật dùng `@WithMockUser` + `.with(csrf())` thay vì đi qua luồng OAuth2 thật.
+  `PostControllerTest` có `@Import(SecurityConfig.class)`: không import thì `@WebMvcTest` chạy với
+  chain **mặc định** của Spring Security, test sẽ xanh với một cấu hình không hề tồn tại ở production.
+- `CsrfCookieTest` tách riêng và có `@DirtiesContext`: `SecurityMockMvcRequestPostProcessors.csrf()`
+  thay `CsrfTokenRepository` ngay trên instance `CsrfFilter` dùng chung của context, nên sau khi một
+  test gọi `.with(csrf())` thì các request sau không còn ghi cookie thật — không tách ra thì kết quả
+  phụ thuộc thứ tự chạy.
+- Dùng `spring-boot-starter-security-test` chứ không phải `spring-security-test` trần: starter mới
+  kéo theo phần tự động gắn security filter vào `MockMvc`; thiếu nó thì `@WithMockUser` vô tác dụng
+  và mọi request trong test đều bị 401.
 
-## 6. Thiết kế
+## 7. Thiết kế
 
 **Phân lớp:** `Controller` (mỏng, chỉ `@Valid` + delegate, không truy vấn DB) → `Service`
 (nghiệp vụ, `@Transactional`) → `Repository` (Spring Data JPA) → `DTO` (record + Bean Validation)
@@ -203,3 +302,7 @@ User 1─* Post 1─* SocialMetric
   giảm dần nên bản ghi đầu tiên của mỗi bài chính là lần đo gần nhất.
 - `ExcelMapper` không để lọt message tiếng Anh của POI ra API; mọi lỗi file được dịch thành thông
   báo tiếng Việt qua `ExcelParseException` (cả file) và `ExcelCellException` (một ô).
+- `SecurityConfig` nhận `ClientRegistrationRepository` qua `ObjectProvider`: chưa cấu hình Social
+  Login thì app vẫn khởi động, thay vì chết ngay lúc start.
+- Đăng xuất bắt buộc là `POST` kèm token. Để `GET` thì chỉ cần dụ người dùng bấm vào một đường link
+  là đăng xuất được họ — đúng kiểu tấn công CSRF.

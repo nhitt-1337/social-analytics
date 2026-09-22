@@ -21,7 +21,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 255)
+    // Cho phép null: đăng nhập bằng X/Twitter không trả về email (cần quyền riêng mới có),
+    // nên ép NOT NULL sẽ chặn luôn nhóm người dùng đó. Unique vẫn giữ — MySQL cho phép
+    // nhiều dòng cùng NULL nên không vướng.
+    @Column(unique = true, length = 255)
     @Setter
     private String email;
 

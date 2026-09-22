@@ -46,6 +46,26 @@
 			<version>3.1.0</version>
 		</dependency>
 
+		<!-- Spring Security + OAuth2 client: bảo mật, CSRF và Social Login (Facebook, Twitter). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+		</dependency>
+
+		<!-- Thymeleaf: trang dashboard và form demo CSRF token. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.thymeleaf.extras</groupId>
+			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
+		</dependency>
+
 		<!-- Apache POI: đọc/ghi file Excel (.xlsx) cho import bài viết & export báo cáo. -->
 		<dependency>
 			<groupId>org.apache.poi</groupId>
@@ -78,6 +98,15 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- @WithMockUser, SecurityMockMvcRequestPostProcessors.csrf()...
+		     Dùng starter của Boot chứ không phải spring-security-test trần: starter kéo thêm
+		     phần tự động gắn security filter vào MockMvc, thiếu nó thì @WithMockUser không có
+		     tác dụng và mọi request trong test đều bị 401. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

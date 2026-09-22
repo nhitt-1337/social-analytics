@@ -13,15 +13,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+// Mọi endpoint đều yêu cầu đăng nhập; test này nhắm vào hành vi của API nên giả lập sẵn
+// một người dùng thay vì đi qua luồng OAuth2 thật.
+@WithMockUser
 class PostControllerIntegrationTest {
 
     @Autowired MockMvc mvc;
@@ -61,7 +66,7 @@ class PostControllerIntegrationTest {
 
     @Test
     void createReturns201AndPersistsPost() throws Exception {
-        mvc.perform(post("/api/v1/posts").contextPath("/api/v1").servletPath("/posts")
+        mvc.perform(post("/api/v1/posts").contextPath("/api/v1").servletPath("/posts").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(body("facebook", "fb-001")))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.platform").value("facebook"))
@@ -76,7 +81,7 @@ class PostControllerIntegrationTest {
     void createDuplicateExternalIdReturns409() throws Exception {
         savePost(Platform.FACEBOOK, "fb-dup");
 
-        mvc.perform(post("/api/v1/posts").contextPath("/api/v1").servletPath("/posts")
+        mvc.perform(post("/api/v1/posts").contextPath("/api/v1").servletPath("/posts").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(body("facebook", "fb-dup")))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.error.code").value("CONFLICT"));
@@ -87,7 +92,7 @@ class PostControllerIntegrationTest {
     void sameExternalIdOnAnotherPlatformIsAllowed() throws Exception {
         savePost(Platform.FACEBOOK, "same-id");
 
-        mvc.perform(post("/api/v1/posts").contextPath("/api/v1").servletPath("/posts")
+        mvc.perform(post("/api/v1/posts").contextPath("/api/v1").servletPath("/posts").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(body("twitter", "same-id")))
             .andExpect(status().isCreated());
     }
@@ -117,7 +122,7 @@ class PostControllerIntegrationTest {
 
     @Test
     void invalidBodyReturns422WithFields() throws Exception {
-        mvc.perform(post("/api/v1/posts").contextPath("/api/v1").servletPath("/posts")
+        mvc.perform(post("/api/v1/posts").contextPath("/api/v1").servletPath("/posts").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"platform\":\"\",\"externalId\":\"\"}"))
             .andExpect(status().isUnprocessableEntity())
@@ -137,13 +142,13 @@ class PostControllerIntegrationTest {
     void updateThenDeleteWorks() throws Exception {
         Long id = savePost(Platform.FACEBOOK, "fb-edit").getId();
 
-        mvc.perform(put("/api/v1/posts/" + id).contextPath("/api/v1").servletPath("/posts/" + id)
+        mvc.perform(put("/api/v1/posts/" + id).contextPath("/api/v1").servletPath("/posts/" + id).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(body("twitter", "tw-edited")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.platform").value("twitter"))
             .andExpect(jsonPath("$.externalId").value("tw-edited"));
 
-        mvc.perform(delete("/api/v1/posts/" + id).contextPath("/api/v1").servletPath("/posts/" + id))
+        mvc.perform(delete("/api/v1/posts/" + id).contextPath("/api/v1").servletPath("/posts/" + id).with(csrf()))
             .andExpect(status().isNoContent());
 
         mvc.perform(get("/api/v1/posts/" + id).contextPath("/api/v1").servletPath("/posts/" + id))

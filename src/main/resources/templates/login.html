@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng nhập · Social Analytics</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main class="card">
+    <h1>Social Analytics</h1>
+    <p class="muted">Đăng nhập bằng tài khoản mạng xã hội để xem dashboard.</p>
+
+    <p class="alert error" th:if="${param.error}">
+        Đăng nhập không thành công. Vui lòng thử lại.
+    </p>
+    <p class="alert ok" th:if="${param.logout}">
+        Bạn đã đăng xuất.
+    </p>
+
+    <!-- Link tới endpoint do Spring Security dựng sẵn; registrationId khớp application.yaml. -->
+    <div class="providers" th:if="${!#lists.isEmpty(providers)}">
+        <a class="btn" th:each="provider : ${providers}"
+           th:href="@{'/oauth2/authorization/' + ${provider.id}}"
+           th:text="'Đăng nhập với ' + ${provider.name}">Đăng nhập</a>
+    </div>
+
+    <p class="alert warn" th:if="${#lists.isEmpty(providers)}">
+        Chưa cấu hình Social Login. Đặt biến môi trường <code>FACEBOOK_CLIENT_ID</code> /
+        <code>FACEBOOK_CLIENT_SECRET</code> hoặc <code>X_CLIENT_ID</code> /
+        <code>X_CLIENT_SECRET</code> rồi khởi động lại.
+    </p>
+</main>
+</body>
+</html>

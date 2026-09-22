@@ -11,7 +11,11 @@ import demo.socialanalytics.exception.ResourceNotFoundException;
 import demo.socialanalytics.service.PostService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import demo.socialanalytics.config.SecurityConfig;
+import demo.socialanalytics.security.SocialLoginUserService;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,6 +28,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // Test lát cắt tầng web: @WebMvcTest chỉ dựng controller + validation + GlobalExceptionHandler,
@@ -31,7 +36,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 //
 // PostService được thay bằng @MockitoBean (bản thay thế của @MockBean đã bỏ ở Spring Boot 3.4+),
 // nên test ở đây chỉ trả lời đúng một câu hỏi: tầng web ánh xạ request/response/lỗi có đúng không.
+// @Import(SecurityConfig) để lát cắt chạy đúng bộ quy tắc bảo mật của ứng dụng. Không import
+// thì @WebMvcTest dùng chain MẶC ĐỊNH của Spring Security — test sẽ xanh với một cấu hình
+// không hề tồn tại ở production.
 @WebMvcTest(PostController.class)
+@Import(SecurityConfig.class)
+@WithMockUser
 class PostControllerTest {
 
     private static final String BASE = "/api/v1/posts";
@@ -39,6 +49,10 @@ class PostControllerTest {
     @Autowired MockMvc mvc;
 
     @MockitoBean PostService postService;
+
+    // SecurityConfig cần bean này để dựng oauth2Login; lát cắt web không nạp @Service nên
+    // phải thay bằng mock.
+    @MockitoBean SocialLoginUserService socialLoginUserService;
 
     private PostResponse sampleResponse() {
         return new PostResponse(
@@ -252,7 +266,13 @@ class PostControllerTest {
             case "delete" -> delete(url);
             default -> get(url);
         };
-        return builder.contextPath("/api/v1").servletPath(servletPath);
+        builder.contextPath("/api/v1").servletPath(servletPath);
+        // CSRF bật cho toàn ứng dụng nên mọi request làm thay đổi dữ liệu đều phải kèm token.
+        // Riêng chuyện thiếu token bị chặn được kiểm ở SecurityConfigTest.
+        if (!"get".equals(method)) {
+            builder.with(csrf());
+        }
+        return builder;
     }
 
     private static org.hamcrest.Matcher<String> containsString(String text) {

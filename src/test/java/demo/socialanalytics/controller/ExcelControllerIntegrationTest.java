@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // Test đầu-cuối cho hai API Excel: đi qua HTTP thật, POI thật, DB thật (H2).
@@ -36,6 +38,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+// Hai endpoint Excel đều yêu cầu đăng nhập; test nhắm vào hành vi nhập/xuất nên giả lập
+// sẵn người dùng thay vì đi qua luồng OAuth2 thật.
+@WithMockUser
 class ExcelControllerIntegrationTest {
 
     @Autowired MockMvc mvc;
@@ -66,7 +71,8 @@ class ExcelControllerIntegrationTest {
         return MockMvcRequestBuilders.multipart("/api/v1/import-posts")
             .file(file)
             .contextPath("/api/v1").servletPath("/import-posts")
-            .param("userId", String.valueOf(admin.getId()));
+            .param("userId", String.valueOf(admin.getId()))
+            .with(csrf());
     }
 
     private MockHttpServletRequestBuilder exportRequest() {
@@ -186,7 +192,8 @@ class ExcelControllerIntegrationTest {
         mvc.perform(MockMvcRequestBuilders.multipart("/api/v1/import-posts")
                 .file(file)
                 .contextPath("/api/v1").servletPath("/import-posts")
-                .param("userId", "999999"))
+                .param("userId", "999999")
+                .with(csrf()))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
     }
@@ -195,7 +202,8 @@ class ExcelControllerIntegrationTest {
     void thieuPhanFileThiTraVe400() throws Exception {
         mvc.perform(MockMvcRequestBuilders.multipart("/api/v1/import-posts")
                 .contextPath("/api/v1").servletPath("/import-posts")
-                .param("userId", String.valueOf(admin.getId())))
+                .param("userId", String.valueOf(admin.getId()))
+                .with(csrf()))
             .andExpect(status().isBadRequest());
     }
 
