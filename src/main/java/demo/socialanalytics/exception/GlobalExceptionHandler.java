@@ -1,6 +1,7 @@
 package demo.socialanalytics.exception;
 
 import demo.socialanalytics.dto.response.ErrorResponse;
+import demo.socialanalytics.excel.ExcelParseException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.MismatchedInputException;
 
@@ -61,6 +64,23 @@ public class GlobalExceptionHandler {
             }
         }
         return build(HttpStatus.BAD_REQUEST, "Body của request không hợp lệ hoặc không phải JSON đúng định dạng");
+    }
+
+    // File Excel hỏng, sai sheet hoặc thiếu cột bắt buộc -> lỗi của dữ liệu gửi lên, không phải lỗi server.
+    @ExceptionHandler(ExcelParseException.class)
+    public ResponseEntity<ErrorResponse> handleExcelParse(ExcelParseException exception) {
+        return build(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingPart(MissingServletRequestPartException exception) {
+        return build(HttpStatus.BAD_REQUEST, "Thiếu phần '" + exception.getRequestPartName() + "' trong request");
+    }
+
+    // Trần dung lượng cấu hình ở spring.servlet.multipart.max-file-size.
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleUploadTooLarge(MaxUploadSizeExceededException exception) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "File tải lên vượt quá dung lượng cho phép");
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

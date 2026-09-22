@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,4 +27,11 @@ public interface SocialMetricRepository extends JpaRepository<SocialMetric, Long
 
     @Query("select coalesce(sum(m.likes), 0) from SocialMetric m where m.post.id = :postId")
     long sumLikesByPostId(@Param("postId") Long postId);
+
+    // Export báo cáo: lấy chỉ số của nhiều bài trong MỘT truy vấn rồi chọn bản mới nhất ở tầng
+    // service, thay vì gọi findFirstByPostId... cho từng bài (N+1).
+    // Sắp giảm dần nên bản ghi đầu tiên của mỗi post chính là lần đo gần nhất.
+    @Query("select m from SocialMetric m where m.post.id in :postIds "
+        + "order by m.post.id, m.collectedAt desc, m.id desc")
+    List<SocialMetric> findByPostIdInOrderByCollectedAtDesc(@Param("postIds") Collection<Long> postIds);
 }
