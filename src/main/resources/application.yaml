@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: social-analytics
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/social_analytics?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: ${SHOW_SQL:true}
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Import Excel ở bước sau cần nhận file lớn hơn mặc định 1MB.
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:10MB}
+      max-request-size: ${MAX_REQUEST_SIZE:10MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api/v1
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    demo.socialanalytics: ${LOG_LEVEL_APP:DEBUG}
+    # Bật hai dòng dưới khi cần soi tham số bind vào câu SQL.
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:DEBUG}
+    org.hibernate.orm.jdbc.bind: ${LOG_LEVEL_SQL_PARAM:WARN}
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE:logs/social-analytics.log}
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
