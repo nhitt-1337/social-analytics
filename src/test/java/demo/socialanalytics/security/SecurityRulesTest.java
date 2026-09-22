@@ -60,6 +60,19 @@ class SecurityRulesTest {
                 .andExpect(redirectedUrl("/api/v1/login"));
         }
 
+        // Trình duyệt thật gửi header Accept dài, KẾT THÚC bằng "*/*;q=0.8". Mà */* thì
+        // "tương thích" với application/json, nên nếu không loại */* ra khỏi bộ so khớp thì
+        // mở trang bằng Chrome cũng bị coi là gọi API và nhận 401 thay vì trang đăng nhập.
+        @Test
+        void trinhDuyetThatVoiHeaderAcceptDayDuVanDuocChuyenToiLogin() throws Exception {
+            mvc.perform(get("/api/v1/dashboard").contextPath("/api/v1").servletPath("/dashboard")
+                    .header("Accept",
+                        "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                            + "image/avif,image/webp,image/apng,*/*;q=0.8"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/api/v1/login"));
+        }
+
         @Test
         void trangDangNhapLaCongKhai() throws Exception {
             mvc.perform(page("get", "/login"))

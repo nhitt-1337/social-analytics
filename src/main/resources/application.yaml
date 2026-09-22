@@ -15,31 +15,6 @@ spring:
       hibernate:
         format_sql: true
 
-  # Social Login. Chỉ khai báo khi có biến môi trường: thiếu client-id thì Spring Boot không
-  # tạo ClientRegistrationRepository, và SecurityConfig bỏ qua phần oauth2Login -> app vẫn chạy
-  # bình thường, chỉ là trang /login không có nút nào.
-  #
-  # Redirect URI phải khai đúng y hệt bên trang quản trị ứng dụng của nhà cung cấp:
-  #   http://localhost:8080/api/v1/login/oauth2/code/facebook
-  #   http://localhost:8080/api/v1/login/oauth2/code/x
-  # (có tiền tố /api/v1 vì server.servlet.context-path đặt như vậy)
-  security:
-    oauth2:
-      client:
-        registration:
-          facebook:
-            client-id: ${FACEBOOK_CLIENT_ID:#{null}}
-            client-secret: ${FACEBOOK_CLIENT_SECRET:#{null}}
-            client-name: Facebook
-            scope: public_profile,email
-          # Twitter nay là X; `x` là registrationId dựng sẵn của Spring Security
-          # (authorize/token/user-info đều trỏ sang x.com).
-          x:
-            client-id: ${X_CLIENT_ID:#{null}}
-            client-secret: ${X_CLIENT_SECRET:#{null}}
-            client-name: X (Twitter)
-            scope: users.read,tweet.read
-
   # Import Excel ở bước sau cần nhận file lớn hơn mặc định 1MB.
   servlet:
     multipart:
@@ -72,8 +47,23 @@ logging:
       max-file-size: 10MB
       max-history: 7
 
-# Job cập nhật chỉ số mạng xã hội.
 social:
+  # Social Login. Provider nào có ĐỦ client id + secret mới được đăng ký; không có cái nào thì
+  # trang /login hiện hướng dẫn cấu hình thay vì nút dẫn tới trang lỗi của nhà cung cấp.
+  #
+  # Redirect URI phải khai đúng y hệt bên trang quản trị ứng dụng của nhà cung cấp — chú ý tiền
+  # tố /api/v1 do server.servlet.context-path:
+  #   http://localhost:8080/api/v1/login/oauth2/code/facebook
+  #   http://localhost:8080/api/v1/login/oauth2/code/x
+  login:
+    facebook:
+      client-id: ${FACEBOOK_CLIENT_ID:}
+      client-secret: ${FACEBOOK_CLIENT_SECRET:}
+    x:
+      client-id: ${X_CLIENT_ID:}
+      client-secret: ${X_CLIENT_SECRET:}
+
+  # Job cập nhật chỉ số mạng xã hội.
   crawl:
     enabled: ${CRAWL_ENABLED:true}
     # Khoảng cách giữa hai lần chạy, tính từ lúc lần trước KẾT THÚC (ISO-8601 duration).

@@ -16,16 +16,35 @@ public record SocialUserAttributes(
     String avatarUrl
 ) {
 
-    // Facebook: /me?fields=id,name,email trả phẳng { "id", "name", "email" }.
+    // Facebook: /me?fields=id,name,email,picture.type(large) trả về
+    // { "id", "name", "email", "picture": { "data": { "url", "is_silhouette", ... } } }
     static SocialUserAttributes fromFacebook(Map<String, Object> attributes) {
-        String id = text(attributes.get("id"));
         return new SocialUserAttributes(
             AuthProvider.FACEBOOK,
-            id,
+            text(attributes.get("id")),
             text(attributes.get("name")),
             text(attributes.get("email")),
-            // Ảnh đại diện Facebook lấy theo id, không nằm trong phần trả về.
-            id == null ? null : "https://graph.facebook.com/" + id + "/picture?type=large");
+            facebookPicture(attributes));
+    }
+
+    // Ảnh đại diện phải lấy từ payload chứ KHÔNG tự ghép URL graph.facebook.com/{id}/picture:
+    // URL đó gọi mà không kèm access token thì Facebook trả về ảnh silhouette xám cho mọi người.
+    //
+    // is_silhouette = true nghĩa là tài khoản chưa đặt ảnh -> để null cho giao diện hiện phần
+    // dự phòng, thay vì hiện một hình xám vô nghĩa.
+    @SuppressWarnings("unchecked")
+    private static String facebookPicture(Map<String, Object> attributes) {
+        if (!(attributes.get("picture") instanceof Map<?, ?> picture)) {
+            return null;
+        }
+        if (!(((Map<String, Object>) picture).get("data") instanceof Map<?, ?> data)) {
+            return null;
+        }
+        Map<String, Object> fields = (Map<String, Object>) data;
+        if (Boolean.TRUE.equals(fields.get("is_silhouette"))) {
+            return null;
+        }
+        return text(fields.get("url"));
     }
 
     // X (Twitter): /2/users/me trả LỒNG một lớp { "data": { "id", "name", "username" } }.

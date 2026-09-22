@@ -39,3 +39,27 @@ hr { border: 0; border-top: 1px solid #e4e6eb; margin: 24px 0; }
 .badge.ok { background: #e7f3e7; color: #1a7f37; }
 .badge.warn { background: #fff8e1; color: #8a6d00; }
 .badge.run { background: #e7f0fd; color: #1877f2; }
+
+/* ----- trang đăng nhập ----- */
+body.centered {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+}
+.login-card { max-width: 400px; text-align: center; }
+.login-card .muted { margin-bottom: 24px; }
+.login-card .providers { flex-direction: column; gap: 10px; }
+.login-card pre {
+    background: rgba(0,0,0,.05); padding: 8px 10px; border-radius: 6px;
+    margin: 8px 0 0; text-align: left; font-size: 12px; overflow-x: auto;
+}
+
+/* Nút dùng đúng màu nhận diện của từng nhà cung cấp — người dùng nhận ra ngay bằng mắt. */
+.btn-provider {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 11px 16px; border-radius: 8px;
+    font: inherit; font-weight: 600; text-decoration: none; color: #fff;
+    transition: filter .15s;
+}
+.btn-provider:hover { filter: brightness(1.08); }
+.provider-icon { width: 18px; height: 18px; flex-shrink: 0; }
+.provider-facebook { background: #1877f2; }
+.provider-x { background: #000; }

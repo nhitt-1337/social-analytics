@@ -16,8 +16,11 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestCustomizers;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
@@ -25,6 +28,8 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
@@ -65,13 +70,8 @@ public class SecurityConfig {
                 .requestMatchers(PUBLIC_PATHS).permitAll()
                 .anyRequest().authenticated())
 
-            .exceptionHandling(exceptions -> exceptions
-                // Trình duyệt gọi trang HTML mà chưa đăng nhập -> chuyển tới /login.
-                // Còn client gọi API (nhận JSON) thì trả thẳng 401, đừng trả về trang HTML
-                // đăng nhập vì phía gọi không đọc được.
-                .defaultAuthenticationEntryPointFor(
-                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
-                    new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON)))
+            .exceptionHandling(exceptions ->
+                exceptions.authenticationEntryPoint(authenticationEntryPoint()))
 
             .logout(logout -> logout
                 .logoutSuccessUrl("/login?logout")
@@ -107,6 +107,31 @@ public class SecurityConfig {
     // Spring Security chỉ tự bật PKCE cho client kiểu "none" (không có client secret).
     // X/Twitter dùng client secret nhưng VẪN bắt buộc PKCE, nên phải bật tay ở đây.
     // Facebook cũng hỗ trợ PKCE nên bật chung cho cả hai, không hại gì.
+    // Chưa đăng nhập thì trả về cái gì, tuỳ theo bên gọi là client API hay trình duyệt.
+    //
+    // Tự dựng DelegatingAuthenticationEntryPoint thay vì dùng defaultAuthenticationEntryPointFor():
+    // hễ gọi authenticationEntryPoint() để đặt mặc định thì Spring BỎ QUA toàn bộ các mapping
+    // khai bằng defaultAuthenticationEntryPointFor(), nên trộn hai cách là mất phần phân biệt.
+    //
+    // Đặt mặc định tường minh chứ không dựa vào oauth2Login(): chưa cấu hình Social Login thì
+    // oauth2Login không được gọi, khi đó Spring dùng entry point mặc định trả 401 và người dùng
+    // không mở nổi trang /login để đọc hướng dẫn cấu hình.
+    private AuthenticationEntryPoint authenticationEntryPoint() {
+        MediaTypeRequestMatcher jsonRequest = new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON);
+        // Bỏ qua */*: trình duyệt luôn gửi kèm "*/*;q=0.8" ở cuối header Accept, mà */* thì
+        // "tương thích" với application/json. Không loại ra thì mở trang bằng trình duyệt cũng
+        // bị coi là gọi API và nhận 401 thay vì được chuyển tới trang đăng nhập.
+        jsonRequest.setIgnoredMediaTypes(Set.of(MediaType.ALL));
+
+        LinkedHashMap<org.springframework.security.web.util.matcher.RequestMatcher, AuthenticationEntryPoint>
+            byRequestType = new LinkedHashMap<>();
+        byRequestType.put(jsonRequest, new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
+
+        DelegatingAuthenticationEntryPoint entryPoint = new DelegatingAuthenticationEntryPoint(byRequestType);
+        entryPoint.setDefaultEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"));
+        return entryPoint;
+    }
+
     private OAuth2AuthorizationRequestResolver pkceResolver(ClientRegistrationRepository repository) {
         DefaultOAuth2AuthorizationRequestResolver resolver =
             new DefaultOAuth2AuthorizationRequestResolver(repository, "/oauth2/authorization");

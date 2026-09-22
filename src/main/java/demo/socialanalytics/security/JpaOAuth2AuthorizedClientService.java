@@ -9,7 +9,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
@@ -22,8 +21,11 @@ import java.util.Set;
 // khai báo bean này là toàn bộ token được lưu — không phải chen tay vào luồng đăng nhập.
 //
 // Bản mặc định (InMemoryOAuth2AuthorizedClientService) mất sạch token khi restart và không dùng
-// được từ tiến trình nền; job crawl ở bước sau cần đọc token ngoài phiên đăng nhập của người dùng.
-@Service
+// được từ tiến trình nền; job crawl cần đọc token ngoài phiên đăng nhập của người dùng.
+//
+// KHÔNG đánh @Service: lớp này cần ClientRegistrationRepository, mà bean đó chỉ tồn tại khi
+// Social Login đã được cấu hình. Vì vậy nó được khai báo trong SocialLoginClientRegistrations
+// để hai thứ sống cùng vòng đời — chưa cấu hình Social Login thì app vẫn khởi động bình thường.
 public class JpaOAuth2AuthorizedClientService implements OAuth2AuthorizedClientService {
 
     private final AuthorizedClientJpaRepository authorizedClientRepository;

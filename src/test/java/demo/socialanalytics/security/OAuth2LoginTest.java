@@ -17,10 +17,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Kiểm tra phần cấu hình Social Login. Đặt client id/secret giả qua properties: đủ để Spring Boot
 // tạo ClientRegistration và dựng URL chuyển hướng, không hề gọi ra Internet.
 @SpringBootTest(properties = {
-    "spring.security.oauth2.client.registration.facebook.client-id=test-fb-id",
-    "spring.security.oauth2.client.registration.facebook.client-secret=test-fb-secret",
-    "spring.security.oauth2.client.registration.x.client-id=test-x-id",
-    "spring.security.oauth2.client.registration.x.client-secret=test-x-secret"
+    "social.login.facebook.client-id=test-fb-id",
+    "social.login.facebook.client-secret=test-fb-secret",
+    "social.login.x.client-id=test-x-id",
+    "social.login.x.client-secret=test-x-secret"
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -46,6 +46,29 @@ class OAuth2LoginTest {
         assertThat(facebook.getProviderDetails().getAuthorizationUri())
             .contains("facebook.com");
         assertThat(facebook.getScopes()).contains("email", "public_profile");
+    }
+
+    // Provider dựng sẵn của Spring Security trỏ vào Graph API v2.8 (bản từ 2016).
+    // application.yaml ghi đè sang endpoint KHÔNG ghi phiên bản để không có con số nào cũ đi.
+    @Test
+    void khongBamVaoMotPhienBanGraphApiCuThe() {
+        var provider = clientRegistrations.findByRegistrationId("facebook").getProviderDetails();
+
+        assertThat(provider.getAuthorizationUri()).isEqualTo("https://www.facebook.com/dialog/oauth");
+        assertThat(provider.getTokenUri()).isEqualTo("https://graph.facebook.com/oauth/access_token");
+        assertThat(provider.getAuthorizationUri()).doesNotContain("/v2.8/");
+        assertThat(provider.getTokenUri()).doesNotContain("/v2.8/");
+    }
+
+    // Phải xin cả ảnh đại diện trong user-info, không tự ghép URL (sẽ ra ảnh silhouette xám).
+    @Test
+    void xinCaAnhDaiDienTrongUserInfo() {
+        var userInfo = clientRegistrations.findByRegistrationId("facebook")
+            .getProviderDetails().getUserInfoEndpoint();
+
+        assertThat(userInfo.getUri()).contains("picture.type(large)");
+        assertThat(userInfo.getUri()).contains("email");
+        assertThat(userInfo.getUserNameAttributeName()).isEqualTo("id");
     }
 
     // Twitter nay là X: hằng dựng sẵn của Spring Security trỏ sang x.com.

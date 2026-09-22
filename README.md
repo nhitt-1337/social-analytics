@@ -162,14 +162,14 @@ Giới hạn: đọc tối đa `ExcelMapper.MAX_DATA_ROWS` = 5.000 dòng, xuất
 
 ### Cấu hình
 
-Không đặt biến môi trường thì app vẫn chạy bình thường, chỉ là trang `/login` không có nút nào
-(`SecurityConfig` bỏ qua phần `oauth2Login` khi không có `ClientRegistrationRepository`).
-
 ```bash
 export FACEBOOK_CLIENT_ID=...   FACEBOOK_CLIENT_SECRET=...
 export X_CLIENT_ID=...          X_CLIENT_SECRET=...
 ./mvnw spring-boot:run
 ```
+
+Chỉ nhà cung cấp nào có **đủ cả** client id và secret mới được đăng ký. Không cấu hình gì thì app
+vẫn chạy bình thường, trang `/login` hiện hướng dẫn thay vì nút dẫn tới trang lỗi của Facebook.
 
 Redirect URI phải khai **đúng y hệt** bên trang quản trị ứng dụng của nhà cung cấp — chú ý tiền
 tố `/api/v1` do `server.servlet.context-path`:
@@ -178,6 +178,45 @@ tố `/api/v1` do `server.servlet.context-path`:
 http://localhost:8080/api/v1/login/oauth2/code/facebook
 http://localhost:8080/api/v1/login/oauth2/code/x
 ```
+
+### Tạo app Facebook để đăng nhập thật
+
+1. Vào <https://developers.facebook.com/apps> → **Create app**.
+2. Chọn use case **Authenticate and request data from users with Facebook Login**.
+3. Sau khi tạo: **Facebook Login → Settings**, điền vào ô *Valid OAuth Redirect URIs*:
+   ```
+   http://localhost:8080/api/v1/login/oauth2/code/facebook
+   ```
+4. **App settings → Basic**: lấy *App ID* và *App Secret*.
+5. Chạy app với hai giá trị đó:
+   ```bash
+   FACEBOOK_CLIENT_ID=<App ID> FACEBOOK_CLIENT_SECRET=<App Secret> ./mvnw spring-boot:run
+   ```
+6. Mở <http://localhost:8080/api/v1/login> → bấm **Tiếp tục với Facebook**.
+
+**Ba chỗ hay vấp:**
+
+- **App đang ở Development mode** thì chỉ tài khoản có vai trò trong app mới đăng nhập được
+  (admin/developer/tester). Thêm người ở **App roles → Roles**. Muốn ai cũng dùng được thì phải
+  qua App Review.
+- **Enforce HTTPS.** Facebook mặc định bắt redirect URI dùng HTTPS; `http://localhost` thường được
+  miễn trừ. Nếu vẫn bị từ chối thì tắt *Enforce HTTPS* trong Facebook Login → Settings, hoặc dùng
+  một đường hầm HTTPS (ngrok) rồi khai URI của nó.
+- **Quyền `email`.** Trong Development mode thì dùng được ngay với các tài khoản có vai trò trong
+  app. Người dùng vẫn có quyền từ chối chia sẻ email — khi đó `email` là `null` và app vẫn đăng
+  nhập bình thường.
+
+### Hai thứ đã chỉnh so với mặc định của Spring Security
+
+- **Không bám vào một phiên bản Graph API.** Provider `facebook` dựng sẵn của Spring Security trỏ
+  vào **v2.8** — bản từ 2016. Facebook hiện vẫn định tuyến được v2.8, nhưng bám vào một bản đã bỏ
+  9 năm là chuyện sớm muộn sẽ hỏng. `SocialLoginClientRegistrations` chuyển sang endpoint **không
+  ghi phiên bản** (`/dialog/oauth`, `/oauth/access_token`): Facebook tự định tuyến sang bản được
+  hỗ trợ, không có con số nào để cũ đi.
+- **Ảnh đại diện xin thẳng trong user-info** (`fields=...,picture.type(large)`) rồi đọc
+  `picture.data.url`. Tự ghép URL `graph.facebook.com/{id}/picture` mà không kèm access token thì
+  Facebook trả về **ảnh silhouette xám** cho mọi người. Tài khoản chưa đặt ảnh thì payload có
+  `is_silhouette: true` → coi như không có ảnh để giao diện hiện phần dự phòng.
 
 ### CSRF
 
@@ -337,7 +376,7 @@ ngay** để khỏi đợi hết 1 giờ.
 ./mvnw test
 ```
 
-**232 test**, chạy trên H2 ở `MODE=MySQL` — không cần dựng MySQL thật.
+**243 test**, chạy trên H2 ở `MODE=MySQL` — không cần dựng MySQL thật.
 
 | Tầng | Kiểu test | Lớp test |
 |---|---|---|
@@ -346,8 +385,9 @@ ngay** để khỏi đợi hết 1 giờ.
 | Repository | `@DataJpaTest` | `PostRepositoryTest` (11), `SocialMetricRepositoryTest` (9) |
 | Controller (lát cắt web) | `@WebMvcTest` + `@MockitoBean` | `PostControllerTest` (17) |
 | Đầu-cuối | `@SpringBootTest` + `MockMvc` | `PostControllerIntegrationTest` (8), `MetricControllerIntegrationTest` (7), `ExcelControllerIntegrationTest` (16) |
-| Bảo mật | `@SpringBootTest` + `MockMvc` | `SecurityRulesTest` (16), `OAuth2LoginTest` (9), `CsrfCookieTest` (1) |
-| Social Login | Mockito / `@DataJpaTest` | `SocialUserAttributesTest` (10), `SocialLoginUserServiceTest` (8), `JpaOAuth2AuthorizedClientServiceTest` (8) |
+| Bảo mật | `@SpringBootTest` + `MockMvc` | `SecurityRulesTest` (17), `OAuth2LoginTest` (11), `CsrfCookieTest` (1) |
+| Cấu hình Social Login | `ApplicationContextRunner` | `SocialLoginClientRegistrationsTest` (6) |
+| Social Login | Mockito / `@DataJpaTest` | `SocialUserAttributesTest` (12), `SocialLoginUserServiceTest` (8), `JpaOAuth2AuthorizedClientServiceTest` (8) |
 | Job & đa luồng | Mockito | `SocialMetricsCollectorTest` (6), `SocialMetricsUpdateJobTest` (9), `MockSocialApiClientTest` (7) |
 | Job & đa luồng | `@SpringBootTest` | `AsyncConfigTest` (6), `SocialMetricsJobIntegrationTest` (6), `CrawlControllerIntegrationTest` (8) |
 
@@ -416,5 +456,14 @@ User 1─* Post 1─* SocialMetric
   báo tiếng Việt qua `ExcelParseException` (cả file) và `ExcelCellException` (một ô).
 - `SecurityConfig` nhận `ClientRegistrationRepository` qua `ObjectProvider`: chưa cấu hình Social
   Login thì app vẫn khởi động, thay vì chết ngay lúc start.
+- Danh sách nhà cung cấp dựng **từ code** (`SocialLoginClientRegistrations`) chứ không khai trong
+  `spring.security.oauth2.client.registration.*`. Khai trong yaml thì mọi provider viết ở đó luôn
+  được đăng ký kể cả khi chưa có client id — và đặt mặc định `${FACEBOOK_CLIENT_ID:#{null}}` cũng
+  không cứu được, vì `@ConfigurationProperties` **không** đánh giá SpEL nên `#{null}` bị dùng làm
+  client id nguyên văn.
+- Entry point tự dựng bằng `DelegatingAuthenticationEntryPoint`, và bộ so khớp JSON **loại bỏ
+  `*/*`**. Trình duyệt luôn gửi kèm `*/*;q=0.8` ở cuối header `Accept`, mà `*/*` thì "tương thích"
+  với `application/json` — không loại ra thì mở trang bằng Chrome cũng bị coi là gọi API và nhận
+  401 thay vì được chuyển tới trang đăng nhập.
 - Đăng xuất bắt buộc là `POST` kèm token. Để `GET` thì chỉ cần dụ người dùng bấm vào một đường link
   là đăng xuất được họ — đúng kiểu tấn công CSRF.

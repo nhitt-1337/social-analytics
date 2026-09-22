@@ -18,11 +18,15 @@ class SocialUserAttributesTest {
     class Facebook {
 
         @Test
-        void docDuocJsonPhangCuaFacebook() {
+        void docDuocPayloadCuaFacebook() {
             var attributes = Map.<String, Object>of(
                 "id", "1234567890",
                 "name", "Nguyễn Văn A",
-                "email", "a@example.com");
+                "email", "a@example.com",
+                "picture", Map.of("data", Map.of(
+                    "url", "https://scontent.fbcdn.net/anh.jpg",
+                    "is_silhouette", false,
+                    "width", 200, "height", 200)));
 
             var social = SocialUserAttributes.of("facebook", attributes);
 
@@ -30,9 +34,29 @@ class SocialUserAttributesTest {
             assertThat(social.providerId()).isEqualTo("1234567890");
             assertThat(social.fullName()).isEqualTo("Nguyễn Văn A");
             assertThat(social.email()).isEqualTo("a@example.com");
-            // Ảnh đại diện Facebook không nằm trong payload, phải tự dựng URL từ id.
-            assertThat(social.avatarUrl()).isEqualTo(
-                "https://graph.facebook.com/1234567890/picture?type=large");
+            assertThat(social.avatarUrl()).isEqualTo("https://scontent.fbcdn.net/anh.jpg");
+        }
+
+        // is_silhouette = true nghĩa là tài khoản CHƯA đặt ảnh; Facebook vẫn trả về một URL
+        // hình xám. Nhận về null để giao diện hiện phần dự phòng thay vì hình xám vô nghĩa.
+        @Test
+        void anhMacDinhCuaFacebookThiCoiNhuKhongCoAnh() {
+            var social = SocialUserAttributes.of("facebook", Map.of(
+                "id", "1", "name", "A",
+                "picture", Map.of("data", Map.of(
+                    "url", "https://scontent.fbcdn.net/silhouette.jpg",
+                    "is_silhouette", true))));
+
+            assertThat(social.avatarUrl()).isNull();
+        }
+
+        // Không xin được quyền ảnh, hoặc Facebook đổi payload -> không được ném lỗi.
+        @Test
+        void thieuHanTruongPictureThiVanDangNhapDuoc() {
+            var social = SocialUserAttributes.of("facebook", Map.of("id", "1", "name", "A"));
+
+            assertThat(social.providerId()).isEqualTo("1");
+            assertThat(social.avatarUrl()).isNull();
         }
 
         // Người dùng có thể từ chối chia sẻ email dù đã xin scope.
