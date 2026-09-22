@@ -71,3 +71,20 @@ logging:
     rollingpolicy:
       max-file-size: 10MB
       max-history: 7
+
+# Job cập nhật chỉ số mạng xã hội.
+social:
+  crawl:
+    enabled: ${CRAWL_ENABLED:true}
+    # Khoảng cách giữa hai lần chạy, tính từ lúc lần trước KẾT THÚC (ISO-8601 duration).
+    interval: ${CRAWL_INTERVAL:PT1H}
+    # Đợi ứng dụng khởi động xong hẳn rồi mới chạy lần đầu.
+    initial-delay: ${CRAWL_INITIAL_DELAY:PT1M}
+    # Mỗi tài khoản là một tác vụ chạy song song.
+    pool-size: ${CRAWL_POOL_SIZE:8}
+    queue-capacity: ${CRAWL_QUEUE_CAPACITY:100}
+    timeout-seconds: ${CRAWL_TIMEOUT_SECONDS:300}
+    # Client giả lập; bỏ phần này khi nối API thật.
+    mock:
+      latency-ms: ${CRAWL_MOCK_LATENCY_MS:40}
+      failure-rate: ${CRAWL_MOCK_FAILURE_RATE:0.1}

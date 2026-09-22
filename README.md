@@ -12,7 +12,7 @@ Xây bằng **Spring Boot 4.1 / Java 21 / MySQL 8.4**.
 
 ## 1. Tình trạng
 
-Giai đoạn hiện tại: **Bảo mật & CSRF + Social Login**.
+Giai đoạn hiện tại: **Background Job & Multithreading**.
 
 | Hạng mục | Trạng thái |
 |---|---|
@@ -25,7 +25,8 @@ Giai đoạn hiện tại: **Bảo mật & CSRF + Social Login**.
 | Social Login OAuth2 (Facebook, X/Twitter) | ✅ |
 | Import/Export Excel bằng Apache POI + Reflection | ✅ |
 | Unit test Service & Controller, `@DataJpaTest` | ✅ |
-| Background job crawl (Multithreading, JMS) | ⏳ |
+| Background job crawl định kỳ (`@Scheduled` + `@Async`) | ✅ |
+| JMS | ⏳ |
 | Biểu đồ Chart.js | ⏳ |
 | WebSocket realtime | ⏳ |
 
@@ -65,6 +66,9 @@ API (nhận JSON) trả **401**, còn trang HTML bị chuyển hướng về `/l
 | DELETE | `/metrics/{id}` | Xoá một lần đo → 204 |
 | POST | `/import-posts?userId=` | Nhập bài viết từ file Excel (multipart, part tên `file`) |
 | GET | `/export-report?platform=&from=&to=` | Xuất báo cáo tương tác ra file `.xlsx` |
+| GET | `/crawl/last-run` | Lần cập nhật gần nhất — 204 khi job chưa chạy lần nào |
+| GET | `/crawl/runs` | 10 lần chạy gần nhất |
+| POST | `/crawl/run` | Chạy job ngay — 409 khi đang có lần chạy dở |
 
 Trang HTML (Thymeleaf):
 
@@ -229,13 +233,111 @@ luôn có mặt ngay từ lần tải trang đầu tiên.
 > Hoặc dựng lại từ đầu: `docker compose down -v && docker compose up -d`.
 > Bỏ qua bước này thì đăng nhập bằng X sẽ lỗi `Field 'email' doesn't have a default value`.
 
-## 6. Kiểm thử
+## 6. Background Job & Multithreading
+
+Job `updateSocialMetricsJob` chạy **mỗi 1 giờ**, lấy chỉ số mới cho toàn bộ bài viết.
+
+```
+@Scheduled (scheduler-*)          @Async (crawl-*)
+      |                                 |
+SocialMetricsUpdateJob  --giao việc-->  SocialMetricsCollector   (1 tác vụ = 1 TÀI KHOẢN)
+      |                                 |
+      |                          SocialApiClient  (hiện là dữ liệu giả)
+      |                                 |
+      |                          MetricWriter     (1 transaction / 1 bài)
+      |
+   CrawlRun  ->  "Last updated time" trên dashboard
+```
+
+### Đơn vị chạy song song là tài khoản, không phải bài viết
+
+Giới hạn tần suất của Facebook/X tính theo **token**, nên gọi dồn nhiều bài của cùng một tài khoản
+cùng lúc là cách nhanh nhất để bị chặn. Vì vậy: **nhiều tài khoản song song, trong một tài khoản
+thì tuần tự**.
+
+Đo thực tế với 3 tài khoản × 4 bài, độ trễ giả lập 300ms mỗi lần gọi:
+
+```
+tuần tự hoàn toàn : 12 × 300ms          = 3600ms
+thiết kế hiện tại : 4 × 300ms (song song) = 1200ms
+đo được           : ~1280ms
+```
+
+### Cấu hình
+
+```yaml
+social.crawl:
+  enabled: true            # đặt false để tắt job (test dùng cách này)
+  interval: PT1H           # tính từ lúc lần trước KẾT THÚC
+  initial-delay: PT1M
+  pool-size: 8
+  queue-capacity: 100
+  timeout-seconds: 300
+  mock:
+    latency-ms: 40         # giả lập độ trễ mạng
+    failure-rate: 0.1      # giả lập 10% lời gọi hỏng
+```
+
+Tất cả đều có biến môi trường tương ứng (`CRAWL_INTERVAL`, `CRAWL_POOL_SIZE`...). Muốn quan sát
+nhanh thì đặt `CRAWL_INTERVAL=PT30S CRAWL_INITIAL_DELAY=PT10S`.
+
+### Những chỗ quyết định có chủ ý
+
+- **`fixedDelay` chứ không `fixedRate`.** `fixedRate` đếm từ lúc BẮT ĐẦU, nên một lần chạy lâu hơn
+  1 giờ sẽ khiến các lần sau dồn cục lên nhau.
+- **Hai bể luồng riêng.** Không khai báo thì `@Scheduled` chạy trên **một** luồng duy nhất (một job
+  chậm chặn mọi job khác) và `@Async` dùng `SimpleAsyncTaskExecutor` — tạo luồng mới cho **từng**
+  tác vụ, không giới hạn. Cả hai đều không dùng được ở production.
+- **`CallerRunsPolicy`.** Hàng đợi đầy thì tác vụ chạy ngay trên luồng gọi: job chậm lại chứ không
+  mất bài nào. Mặc định của JDK là `AbortPolicy` — ném lỗi và bỏ luôn tác vụ đó.
+- **Giao hết việc rồi mới chờ.** Gọi `.get()` ngay trong vòng lặp thì hoá ra chạy tuần tự, mất trắng
+  tác dụng của đa luồng. Có test riêng giữ điều này
+  (`SocialMetricsUpdateJobTest#giaoHetViecRoiMoiChoChuKhongChoTungCai`).
+- **Một transaction cho một bài** (`REQUIRES_NEW` trong `MetricWriter`). Bài thứ 5 lỗi thì 4 bài
+  trước vẫn giữ kết quả. Collector không mở transaction nào: giữ kết nối DB trong lúc ngồi chờ
+  mạng là cách chắc chắn để cạn connection pool.
+- **`PARTIAL` tách khỏi `SUCCESS`/`FAILED`.** Crawl vài chục tài khoản thì một hai tài khoản lỗi là
+  bình thường; gọi cả lần chạy đó là "thất bại" sẽ che mất việc phần lớn đã chạy xong.
+
+### Xử lý lỗi trong luồng nền
+
+Lỗi ở luồng nền không ai nhìn thấy ngoài log, nên có ba lớp:
+
+1. **Từng bài** — `SocialMetricsCollector` bắt cả `Exception` (không riêng `SocialApiException`, vì
+   lỗi ghi DB cũng không được làm hỏng phần còn lại), ghi `WARN` kèm stack trace, tính là thất bại
+   rồi đi tiếp.
+2. **Từng lần chạy** — job bắt `TimeoutException` / `InterruptedException` / `ExecutionException`,
+   huỷ phần còn lại và vẫn ghi lại `CrawlRun` thay vì treo mãi. Cờ `running` được thả trong
+   `finally`, thiếu chỗ này thì job không bao giờ chạy lại sau lần đầu gặp lỗi.
+3. **Lưới an toàn** — `AsyncUncaughtExceptionHandler` trong `AsyncConfig`. Ngoại lệ ném ra từ một
+   method `@Async` trả về `void` **không quay lại được** luồng gọi; không có handler thì nó biến
+   mất không dấu vết.
+
+`InterruptedException` luôn được khôi phục cờ ngắt (`Thread.currentThread().interrupt()`) — nuốt nó
+là cách chắc chắn khiến ứng dụng không tắt được.
+
+### Màn hình "Last updated time"
+
+Mỗi lần chạy ghi một dòng vào bảng `crawl_runs`, dashboard đọc dòng gần nhất. Lưu xuống DB chứ
+không giữ trong bộ nhớ vì mốc thời gian này phải đúng cả sau khi restart — hiện số liệu cũ mà nói
+là vừa cập nhật thì tệ hơn là nói thẳng "chưa chạy lần nào". Dashboard có thêm nút **Chạy cập nhật
+ngay** để khỏi đợi hết 1 giờ.
+
+### Còn thiếu
+
+- **Chạy nhiều instance sẽ crawl trùng.** Cờ chặn chạy chồng (`AtomicBoolean`) nằm trong bộ nhớ của
+  một tiến trình. Nhiều instance cần khoá dùng chung (ShedLock hoặc khoá trên DB).
+- **`SocialApiClient` hiện là dữ liệu giả.** Khi nối API thật chỉ cần thêm một implementation đọc
+  access token từ `oauth2_authorized_clients` (đã lưu ở bước Social Login) — phần job không phải
+  sửa gì.
+
+## 7. Kiểm thử
 
 ```bash
 ./mvnw test
 ```
 
-**190 test**, chạy trên H2 ở `MODE=MySQL` — không cần dựng MySQL thật.
+**232 test**, chạy trên H2 ở `MODE=MySQL` — không cần dựng MySQL thật.
 
 | Tầng | Kiểu test | Lớp test |
 |---|---|---|
@@ -246,6 +348,8 @@ luôn có mặt ngay từ lần tải trang đầu tiên.
 | Đầu-cuối | `@SpringBootTest` + `MockMvc` | `PostControllerIntegrationTest` (8), `MetricControllerIntegrationTest` (7), `ExcelControllerIntegrationTest` (16) |
 | Bảo mật | `@SpringBootTest` + `MockMvc` | `SecurityRulesTest` (16), `OAuth2LoginTest` (9), `CsrfCookieTest` (1) |
 | Social Login | Mockito / `@DataJpaTest` | `SocialUserAttributesTest` (10), `SocialLoginUserServiceTest` (8), `JpaOAuth2AuthorizedClientServiceTest` (8) |
+| Job & đa luồng | Mockito | `SocialMetricsCollectorTest` (6), `SocialMetricsUpdateJobTest` (9), `MockSocialApiClientTest` (7) |
+| Job & đa luồng | `@SpringBootTest` | `AsyncConfigTest` (6), `SocialMetricsJobIntegrationTest` (6), `CrawlControllerIntegrationTest` (8) |
 
 Quy ước đã áp dụng:
 
@@ -270,8 +374,16 @@ Quy ước đã áp dụng:
 - Dùng `spring-boot-starter-security-test` chứ không phải `spring-security-test` trần: starter mới
   kéo theo phần tự động gắn security filter vào `MockMvc`; thiếu nó thì `@WithMockUser` vô tác dụng
   và mọi request trong test đều bị 401.
+- **Test đa luồng dùng `CountDownLatch`, không dùng `Thread.sleep`.** Tác vụ chỉ thoát ra khi cả
+  nhóm cùng vào được tới điểm hẹn — chạy tuần tự thì test treo và fail, chứ không phải "may thì
+  xanh". `sleep` cho ra test lúc xanh lúc đỏ tuỳ máy.
+- Job bị tắt trong profile test (`social.crawl.enabled=false`); test nào cần thì bật lại bằng
+  `@SpringBootTest(properties = ...)` và tự gọi `runOnce()`. Để lịch tự chạy thì các test sẽ giẫm
+  lên dữ liệu của nhau.
+- Client giả lập trong test đặt `latency-ms=0`, `failure-rate=0` để kết quả xác định; riêng test
+  cần kiểm tra song song thì thay hẳn `SocialApiClient` bằng bản ghi lại tên luồng.
 
-## 7. Thiết kế
+## 8. Thiết kế
 
 **Phân lớp:** `Controller` (mỏng, chỉ `@Valid` + delegate, không truy vấn DB) → `Service`
 (nghiệp vụ, `@Transactional`) → `Repository` (Spring Data JPA) → `DTO` (record + Bean Validation)

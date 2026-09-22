@@ -13,3 +13,12 @@ logging:
   level:
     root: WARN
     demo.socialanalytics: INFO
+
+# Test tự gọi job khi cần; để lịch tự chạy thì các test sẽ giẫm lên dữ liệu của nhau.
+# Client giả lập chạy không độ trễ và không lỗi ngẫu nhiên để kết quả test xác định.
+social:
+  crawl:
+    enabled: false
+    mock:
+      latency-ms: 0
+      failure-rate: 0

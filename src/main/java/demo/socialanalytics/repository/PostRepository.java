@@ -40,6 +40,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
         + "from Post p where p.externalId in :externalIds")
     List<PostIdentity> findIdentitiesByExternalIdIn(@Param("externalIds") Collection<String> externalIds);
 
+    // Job crawl: lấy danh sách tài khoản CÓ bài viết, mỗi tài khoản sẽ là một tác vụ chạy song song.
+    @Query("select distinct p.user.id from Post p")
+    List<Long> findDistinctUserIds();
+
+    // Các bài của một tài khoản; job xử lý tuần tự trong phạm vi một tài khoản.
+    List<Post> findByUserIdOrderByIdAsc(Long userId);
+
     // Export báo cáo: lọc theo nền tảng và khoảng thời gian ĐĂNG BÀI; tham số nào null thì bỏ qua.
     // Bài chưa có postedAt sẽ không lọt vào khi người dùng truyền from/to.
     @Query("""

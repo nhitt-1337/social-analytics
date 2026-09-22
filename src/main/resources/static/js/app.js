@@ -25,3 +25,30 @@ async function demoApiCall() {
         output.textContent = 'Lỗi: ' + error;
     }
 }
+
+// Bấm "Chạy cập nhật ngay": POST nên vẫn phải kèm token CSRF như mọi request đổi dữ liệu khác.
+async function runCrawlNow() {
+    const output = document.getElementById('crawlResult');
+    output.textContent = 'Đang chạy...';
+    try {
+        const response = await fetch('/api/v1/crawl/run', {
+            method: 'POST',
+            headers: { 'X-XSRF-TOKEN': csrfToken(), 'Accept': 'application/json' }
+        });
+        if (response.status === 409) {
+            output.textContent = 'Đang có một lần chạy khác chưa xong.';
+            return;
+        }
+        const run = await response.json();
+        output.textContent =
+            'Trạng thái: ' + run.status +
+            '\nTài khoản: ' + run.totalAccounts +
+            '\nThành công: ' + run.succeededPosts + '/' + run.totalPosts +
+            '\nLỗi: ' + run.failedPosts +
+            '\nMất: ' + run.durationMs + ' ms';
+        // Tải lại trang để ô "Cập nhật lần cuối" hiện số liệu mới.
+        setTimeout(() => window.location.reload(), 1200);
+    } catch (error) {
+        output.textContent = 'Lỗi: ' + error;
+    }
+}

@@ -1,6 +1,7 @@
 package demo.socialanalytics.controller;
 
 import demo.socialanalytics.security.SocialLoginUserService;
+import demo.socialanalytics.service.CrawlStatusService;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -26,9 +27,14 @@ import java.util.Map;
 public class DashboardController {
 
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
+    private final CrawlStatusService crawlStatusService;
 
-    public DashboardController(ObjectProvider<ClientRegistrationRepository> clientRegistrations) {
+    public DashboardController(
+        ObjectProvider<ClientRegistrationRepository> clientRegistrations,
+        CrawlStatusService crawlStatusService
+    ) {
         this.clientRegistrations = clientRegistrations;
+        this.crawlStatusService = crawlStatusService;
     }
 
     @GetMapping("/")
@@ -47,6 +53,8 @@ public class DashboardController {
     @GetMapping("/dashboard")
     public String dashboard(@AuthenticationPrincipal OAuth2User principal, Model model) {
         model.addAttribute("principal", principal);
+        // Rỗng khi job chưa chạy lần nào -> template hiện "chưa cập nhật lần nào".
+        model.addAttribute("lastRun", crawlStatusService.lastRun().orElse(null));
         return "dashboard";
     }
 

@@ -27,6 +27,37 @@
 
     <hr>
 
+    <h2>Cập nhật dữ liệu</h2>
+
+    <div th:if="${lastRun == null}" class="alert warn">
+        Job chưa chạy lần nào. Lần chạy tự động đầu tiên diễn ra ít phút sau khi khởi động,
+        sau đó lặp lại mỗi 1 giờ.
+    </div>
+
+    <div th:if="${lastRun != null}">
+        <p class="stat">
+            <span class="muted">Cập nhật lần cuối</span><br>
+            <strong th:text="${#temporals.format(lastRun.startedAt, 'HH:mm:ss dd/MM/yyyy')}">--</strong>
+            <span class="badge"
+                  th:classappend="${lastRun.status == 'SUCCESS'} ? 'ok'
+                                : (${lastRun.status == 'RUNNING'} ? 'run' : 'warn')"
+                  th:text="${lastRun.status}">--</span>
+        </p>
+        <p class="muted">
+            <span th:text="${lastRun.succeededPosts}">0</span>/<span th:text="${lastRun.totalPosts}">0</span>
+            bài cập nhật thành công
+            · <span th:text="${lastRun.failedPosts}">0</span> lỗi
+            · <span th:text="${lastRun.totalAccounts}">0</span> tài khoản
+            · <span th:text="${lastRun.durationMs}">0</span> ms
+        </p>
+        <p class="alert warn" th:if="${lastRun.message != null}" th:text="${lastRun.message}"></p>
+    </div>
+
+    <button class="btn" type="button" onclick="runCrawlNow()">Chạy cập nhật ngay</button>
+    <pre id="crawlResult" class="result"></pre>
+
+    <hr>
+
     <h2>Thử CSRF</h2>
     <p class="muted">
         Thymeleaf tự chèn <code>&lt;input type="hidden" name="_csrf"&gt;</code> khi form dùng
