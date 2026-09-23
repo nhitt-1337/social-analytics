@@ -9,6 +9,12 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+
+  # Broker ActiveMQ NHÚNG, chạy ngay trong JVM của test: không cần dựng broker thật bằng Docker.
+  #   broker.persistent=false -> không ghi message xuống đĩa, mỗi lần chạy bắt đầu với hàng đợi sạch
+  #   broker.useJmx=false     -> tránh đụng tên MBean khi nhiều context test cùng chạy
+  activemq:
+    broker-url: vm://localhost?broker.persistent=false&broker.useJmx=false
 logging:
   level:
     root: WARN

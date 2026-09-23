@@ -15,6 +15,24 @@ spring:
       hibernate:
         format_sql: true
 
+  # ActiveMQ: broker chạy bằng Docker Compose, xem README.
+  activemq:
+    broker-url: ${MQ_URL:tcp://localhost:61616}
+    user: ${MQ_USER:admin}
+    password: ${MQ_PASSWORD:admin}
+    # Không bật pool: `spring.activemq.pool.enabled=true` cần thêm thư viện pooled-jms, thiếu nó
+    # thì KHÔNG có ConnectionFactory nào được tạo và app chết lúc khởi động.
+    # Mặc định Spring Boot đã bọc trong CachingConnectionFactory nên mỗi lần gửi không phải
+    # mở kết nối mới — đủ cho nhu cầu ở đây.
+
+  jms:
+    # Hàng đợi (point-to-point), không phải topic: mỗi message chỉ MỘT listener xử lý.
+    pub-sub-domain: false
+    listener:
+      # Phiên có transaction -> listener ném lỗi thì message quay lại hàng đợi và được giao lại.
+      session:
+        transacted: true
+
   # Import Excel ở bước sau cần nhận file lớn hơn mặc định 1MB.
   servlet:
     multipart:

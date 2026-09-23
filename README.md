@@ -12,7 +12,7 @@ Xây bằng **Spring Boot 4.1 / Java 21 / MySQL 8.4**.
 
 ## 1. Tình trạng
 
-Giai đoạn hiện tại: **Background Job & Multithreading**.
+Giai đoạn hiện tại: **JMS & Queue Handling**.
 
 | Hạng mục | Trạng thái |
 |---|---|
@@ -26,7 +26,7 @@ Giai đoạn hiện tại: **Background Job & Multithreading**.
 | Import/Export Excel bằng Apache POI + Reflection | ✅ |
 | Unit test Service & Controller, `@DataJpaTest` | ✅ |
 | Background job crawl định kỳ (`@Scheduled` + `@Async`) | ✅ |
-| JMS | ⏳ |
+| JMS: queue, listener, retry & DLQ (ActiveMQ) | ✅ |
 | Biểu đồ Chart.js | ⏳ |
 | WebSocket realtime | ⏳ |
 
@@ -35,9 +35,12 @@ Giai đoạn hiện tại: **Background Job & Multithreading**.
 MySQL chạy bằng Docker (không cần cài đặt lên máy):
 
 ```bash
-docker compose up -d           # MySQL 8.4 ở cổng 3306
+docker compose up -d           # MySQL 8.4 (3306) + ActiveMQ (61616, quản trị 8161)
 ./mvnw spring-boot:run
 ```
+
+Giao diện quản trị ActiveMQ: <http://localhost:8161> (admin/admin) — xem được số message đang
+nằm trong từng hàng đợi, kể cả `ActiveMQ.DLQ`.
 
 Cổng 3306 đang bận thì đổi: `DB_PORT=33306 docker compose up -d`, rồi chạy app với
 `DB_URL='jdbc:mysql://localhost:33306/social_analytics?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh'`.
@@ -69,6 +72,8 @@ API (nhận JSON) trả **401**, còn trang HTML bị chuyển hướng về `/l
 | GET | `/crawl/last-run` | Lần cập nhật gần nhất — 204 khi job chưa chạy lần nào |
 | GET | `/crawl/runs` | 10 lần chạy gần nhất |
 | POST | `/crawl/run` | Chạy job ngay — 409 khi đang có lần chạy dở |
+| GET | `/statistics` | Thống kê tổng hợp theo nền tảng |
+| GET | `/statistics/dead-letters` | Message đã vào hàng đợi thư chết |
 
 Trang HTML (Thymeleaf):
 
@@ -370,23 +375,98 @@ ngay** để khỏi đợi hết 1 giờ.
   access token từ `oauth2_authorized_clients` (đã lưu ở bước Social Login) — phần job không phải
   sửa gì.
 
-## 7. Kiểm thử
+## 7. JMS & Queue Handling
+
+Import Excel xong thì việc tính lại thống kê tổng hợp **không** chạy trong request upload, mà đi
+qua hàng đợi:
+
+```
+PostImportService  --(sự kiện Spring, trong transaction)-->  ImportCompletedProducer
+                                                                    |  AFTER_COMMIT
+                                                                    v
+                                                          queue: import.completed
+                                                                    |
+                                                    ImportCompletedListener
+                                                                    |
+                                                          StatisticsService.refresh()
+                                                                    |
+                                                          bảng platform_summaries
+```
+
+Hỏng hết số lần thử lại thì broker đẩy sang `ActiveMQ.DLQ`, `DeadLetterListener` ghi xuống bảng
+`dead_letters`.
+
+### Gửi SAU KHI commit, không phải trong transaction
+
+Đây là chỗ dễ sai nhất và chỉ thỉnh thoảng mới lộ ra. `importPosts()` chạy trong `@Transactional`;
+gửi thẳng JMS từ trong đó sẽ hỏng theo hai kiểu:
+
+1. Listener chạy luồng khác, nhận message **trước** khi dữ liệu commit → tính thống kê thiếu đúng
+   những bài vừa import.
+2. Transaction rollback **sau** khi đã gửi → message báo "import xong" cho một lần import không
+   hề tồn tại.
+
+Cách làm: service phát một **sự kiện Spring** trong transaction, `ImportCompletedProducer` nhận
+bằng `@TransactionalEventListener(phase = AFTER_COMMIT)` rồi mới đẩy lên hàng đợi.
+
+### Thử lại và DLQ
+
+```
+giao lần 1 -> lỗi -> chờ 0,5s -> giao lại (1) -> lỗi -> chờ 1s -> giao lại (2)
+           -> lỗi -> chờ 2s   -> giao lại (3) -> lỗi -> ActiveMQ.DLQ
+```
+
+Hai điều kiện bắt buộc để chuỗi này xảy ra:
+
+- **`sessionTransacted = true`** trên listener container factory. Để mặc định
+  (`AUTO_ACKNOWLEDGE`) thì message coi như xử lý xong ngay lúc giao tới — lỗi là mất luôn, không
+  thử lại và cũng không vào DLQ.
+- **Listener KHÔNG bắt exception.** Ném ra mới rollback được. Bắt rồi ghi log là mất sạch cơ chế
+  thử lại.
+
+Giãn cách tăng dần vì lỗi tạm thời (DB bận, mạng chập chờn) thường tự hết sau một lúc; thử lại
+dồn dập chỉ làm tình hình tệ thêm. Chỉnh bằng `social.messaging.*`.
+
+### Ba chỗ phải mò mới ra
+
+- **Hàng đợi gốc** không phải property JMS thường — nằm trong trường riêng
+  `ActiveMQMessage.getOriginalDestination()`. Đây là chỗ duy nhất trong ứng dụng phụ thuộc vào
+  thư viện broker cụ thể.
+- **Không lưu "số lần giao lại"** thành một con số riêng. `JMSXDeliveryCount` trên message trong
+  DLQ đếm số lần giao của chính message **trong DLQ** (luôn là 1), còn
+  `ActiveMQMessage.getRedeliveryCounter()` bị **reset về 0** khi chuyển sang DLQ — lưu cái nào
+  cũng ra con số trông hợp lý nhưng vô nghĩa. Thay vào đó lưu property
+  `dlqDeliveryFailureCause` do chính broker ghi:
+  `"Delivery[4] exceeds redelivery policy limit:RedeliveryPolicy {...}"`.
+- **Không bật `spring.activemq.pool.enabled`.** Nó cần thêm thư viện `pooled-jms`; thiếu thư viện
+  thì **không có** `ConnectionFactory` nào được tạo và app chết lúc khởi động. Mặc định Spring
+  Boot đã bọc trong `CachingConnectionFactory` nên mỗi lần gửi không phải mở kết nối mới.
+
+### Xử lý message trùng
+
+JMS chỉ bảo đảm **"ít nhất một lần"**: broker giao lại khi listener đang xử lý dở mà mất kết nối,
+dù lần trước có thể đã chạy xong. Nên `StatisticsService.refresh()` **tính lại từ đầu** chứ không
+cộng dồn — chạy một lần hay ba lần đều ra cùng kết quả.
+
+## 8. Kiểm thử
 
 ```bash
 ./mvnw test
 ```
 
-**243 test**, chạy trên H2 ở `MODE=MySQL` — không cần dựng MySQL thật.
+**265 test**, chạy trên H2 và broker ActiveMQ nhúng (`vm://`) ở `MODE=MySQL` — không cần dựng MySQL thật.
 
 | Tầng | Kiểu test | Lớp test |
 |---|---|---|
 | Engine Excel | JUnit5 thuần | `ExcelMapperTest` (17) |
-| Service | JUnit5 + Mockito | `PostServiceTest` (16), `MetricServiceTest` (13), `PostImportServiceTest` (13), `ReportExportServiceTest` (11) |
+| Service | JUnit5 + Mockito | `PostServiceTest` (16), `MetricServiceTest` (13), `PostImportServiceTest` (15), `ReportExportServiceTest` (11) |
 | Repository | `@DataJpaTest` | `PostRepositoryTest` (11), `SocialMetricRepositoryTest` (9) |
 | Controller (lát cắt web) | `@WebMvcTest` + `@MockitoBean` | `PostControllerTest` (17) |
 | Đầu-cuối | `@SpringBootTest` + `MockMvc` | `PostControllerIntegrationTest` (8), `MetricControllerIntegrationTest` (7), `ExcelControllerIntegrationTest` (16) |
 | Bảo mật | `@SpringBootTest` + `MockMvc` | `SecurityRulesTest` (17), `OAuth2LoginTest` (11), `CsrfCookieTest` (1) |
 | Cấu hình Social Login | `ApplicationContextRunner` | `SocialLoginClientRegistrationsTest` (6) |
+| JMS | `@SpringBootTest` + broker nhúng | `ImportMessagingIntegrationTest` (4), `RetryAndDeadLetterTest` (5), `StatisticsControllerIntegrationTest` (5) |
+| Thống kê | `@DataJpaTest` | `StatisticsServiceTest` (6) |
 | Social Login | Mockito / `@DataJpaTest` | `SocialUserAttributesTest` (12), `SocialLoginUserServiceTest` (8), `JpaOAuth2AuthorizedClientServiceTest` (8) |
 | Job & đa luồng | Mockito | `SocialMetricsCollectorTest` (6), `SocialMetricsUpdateJobTest` (9), `MockSocialApiClientTest` (7) |
 | Job & đa luồng | `@SpringBootTest` | `AsyncConfigTest` (6), `SocialMetricsJobIntegrationTest` (6), `CrawlControllerIntegrationTest` (8) |
@@ -422,8 +502,14 @@ Quy ước đã áp dụng:
   lên dữ liệu của nhau.
 - Client giả lập trong test đặt `latency-ms=0`, `failure-rate=0` để kết quả xác định; riêng test
   cần kiểm tra song song thì thay hẳn `SocialApiClient` bằng bản ghi lại tên luồng.
+- Test JMS chạy trên broker **nhúng** (`vm://localhost?broker.persistent=false`) nên `./mvnw test`
+  không cần Docker. Listener chạy luồng khác nên dùng `Awaitility` (`await().untilAsserted`) thay
+  vì khẳng định ngay — hoặc `Thread.sleep`, thứ cho ra test lúc xanh lúc đỏ tuỳ máy.
+- **Cảnh giác khi profile test đặt giá trị khác production.** `spring.activemq.pool.enabled=false`
+  trong profile test đã che mất lỗi chỉ xảy ra ở production (thiếu `ConnectionFactory`), và app
+  chỉ chết khi chạy thật. Cấu hình nào lệch giữa hai bên thì phải có lý do rõ ràng.
 
-## 8. Thiết kế
+## 9. Thiết kế
 
 **Phân lớp:** `Controller` (mỏng, chỉ `@Valid` + delegate, không truy vấn DB) → `Service`
 (nghiệp vụ, `@Transactional`) → `Repository` (Spring Data JPA) → `DTO` (record + Bean Validation)

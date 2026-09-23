@@ -2,6 +2,7 @@ package demo.socialanalytics.repository;
 
 import demo.socialanalytics.entity.Platform;
 import demo.socialanalytics.entity.Post;
+import demo.socialanalytics.repository.projection.PlatformCount;
 import demo.socialanalytics.repository.projection.PostIdentity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +47,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     // Các bài của một tài khoản; job xử lý tuần tự trong phạm vi một tài khoản.
     List<Post> findByUserIdOrderByIdAsc(Long userId);
+
+    // Thống kê tổng hợp: đếm gộp trong MỘT truy vấn thay vì hỏi từng nền tảng một.
+    @Query("select new demo.socialanalytics.repository.projection.PlatformCount("
+        + "p.platform, count(p), count(distinct p.user.id)) "
+        + "from Post p group by p.platform")
+    List<PlatformCount> countGroupedByPlatform();
 
     // Export báo cáo: lọc theo nền tảng và khoảng thời gian ĐĂNG BÀI; tham số nào null thì bỏ qua.
     // Bài chưa có postedAt sẽ không lọt vào khi người dùng truyền from/to.

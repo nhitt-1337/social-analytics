@@ -6,6 +6,7 @@ import demo.socialanalytics.entity.Post;
 import demo.socialanalytics.entity.User;
 import demo.socialanalytics.excel.ExcelMapper;
 import demo.socialanalytics.excel.ExcelParseException;
+import demo.socialanalytics.messaging.ImportCompletedEvent;
 import demo.socialanalytics.exception.InvalidRequestParameterException;
 import demo.socialanalytics.exception.ResourceNotFoundException;
 import demo.socialanalytics.repository.PostRepository;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,13 +46,15 @@ class PostImportServiceTest {
 
     @Mock PostRepository postRepository;
     @Mock UserRepository userRepository;
+    @Mock ApplicationEventPublisher eventPublisher;
 
     PostImportService importService;
     User owner;
 
     @BeforeEach
     void setUp() {
-        importService = new PostImportService(postRepository, userRepository, new ExcelMapper());
+        importService = new PostImportService(
+            postRepository, userRepository, new ExcelMapper(), eventPublisher);
         owner = TestEntities.user(1L, "admin@example.com");
     }
 
@@ -257,6 +261,41 @@ class PostImportServiceTest {
         verifyNoInteractions(postRepository);
     }
 
+    // Phát sự kiện với ĐÚNG số liệu tóm tắt; ImportCompletedProducer mới là nơi đẩy lên hàng đợi.
+    @Test
+    void phatSuKienImportCompletedKemSoLieuTomTat() {
+        ownerExists();
+        noExistingPosts();
+        byte[] file = ExcelTestFiles.postsFile(List.of(
+            List.of("facebook", "fb-001", "Hợp lệ", "", ""),
+            List.of("instagram", "ig-001", "Nền tảng lạ", "", "")));
+
+        importService.importPosts(upload(file), 1L);
+
+        ArgumentCaptor<ImportCompletedEvent> captor = ArgumentCaptor.forClass(ImportCompletedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        var message = captor.getValue().message();
+        assertThat(message.userId()).isEqualTo(1L);
+        assertThat(message.totalRows()).isEqualTo(2);
+        assertThat(message.imported()).isEqualTo(1);
+        assertThat(message.skipped()).isEqualTo(1);
+        assertThat(message.completedAt()).isNotNull();
+    }
+
+    // Import hỏng ở giữa chừng thì KHÔNG được báo "import xong".
+    @Test
+    void khongPhatSuKienKhiFileBiTuChoi() {
+        ownerExists();
+        byte[] file = ExcelTestFiles.file(
+            List.of("content", "url"),
+            List.of(List.of("Thiếu platform", "https://example.com")));
+
+        assertThatThrownBy(() -> importService.importPosts(upload(file), 1L))
+            .isInstanceOf(ExcelParseException.class);
+
+        verifyNoInteractions(eventPublisher);
+    }
+
     @Test
     void tuChoiFileRong() {
         MultipartFile empty = new MockMultipartFile("file", "posts.xlsx", null, new byte[0]);
@@ -265,7 +304,7 @@ class PostImportServiceTest {
             .isInstanceOf(InvalidRequestParameterException.class)
             .hasMessageContaining("Chưa chọn file");
 
-        verifyNoInteractions(userRepository, postRepository);
+        verifyNoInteractions(userRepository, postRepository, eventPublisher);
     }
 
     @Test
@@ -277,7 +316,7 @@ class PostImportServiceTest {
             .isInstanceOf(InvalidRequestParameterException.class)
             .hasMessageContaining(".xlsx");
 
-        verifyNoInteractions(userRepository, postRepository);
+        verifyNoInteractions(userRepository, postRepository, eventPublisher);
     }
 
     // Đuôi .xlsx nhưng nội dung không phải workbook.

@@ -8,16 +8,20 @@ import demo.socialanalytics.excel.ExcelMapper;
 import demo.socialanalytics.excel.ExcelParseException;
 import demo.socialanalytics.excel.ExcelReadResult;
 import demo.socialanalytics.excel.ExcelRow;
+import demo.socialanalytics.messaging.ImportCompletedEvent;
+import demo.socialanalytics.messaging.ImportCompletedMessage;
 import demo.socialanalytics.exception.InvalidRequestParameterException;
 import demo.socialanalytics.exception.ResourceNotFoundException;
 import demo.socialanalytics.repository.PostRepository;
 import demo.socialanalytics.repository.UserRepository;
 import demo.socialanalytics.repository.projection.PostIdentity;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,15 +42,18 @@ public class PostImportService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final ExcelMapper excelMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PostImportService(
         PostRepository postRepository,
         UserRepository userRepository,
-        ExcelMapper excelMapper
+        ExcelMapper excelMapper,
+        ApplicationEventPublisher eventPublisher
     ) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.excelMapper = excelMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -89,11 +96,20 @@ public class PostImportService {
 
         postRepository.saveAll(toSave);
 
-        return new ImportResultResponse(
+        ImportResultResponse response = new ImportResultResponse(
             result.totalRows(),
             toSave.size(),
             result.totalRows() - toSave.size(),
             List.copyOf(errors));
+
+        // Phát sự kiện nội bộ; ImportCompletedProducer mới là nơi đẩy lên hàng đợi, và chỉ đẩy
+        // SAU KHI transaction này commit. Gửi JMS thẳng từ đây thì listener có thể đọc DB trước
+        // lúc commit và tính thống kê thiếu đúng những bài vừa lưu.
+        eventPublisher.publishEvent(new ImportCompletedEvent(new ImportCompletedMessage(
+            userId, response.totalRows(), response.imported(), response.skipped(),
+            LocalDateTime.now())));
+
+        return response;
     }
 
     private ExcelReadResult<PostImportRow> read(MultipartFile file) {

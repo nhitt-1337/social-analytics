@@ -14,5 +14,18 @@ services:
       timeout: 5s
       retries: 20
 
+  # Broker JMS. Cổng 61616 cho ứng dụng, 8161 cho giao diện quản trị
+  # (http://localhost:8161 — tài khoản mặc định admin/admin).
+  activemq:
+    image: apache/activemq-classic:6.2.0
+    ports:
+      - "${MQ_PORT:-61616}:61616"
+      - "${MQ_CONSOLE_PORT:-8161}:8161"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u admin:admin http://localhost:8161/admin/ > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
 volumes:
   social-analytics-db:
