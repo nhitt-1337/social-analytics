@@ -40,14 +40,12 @@ async function runCrawlNow() {
             return;
         }
         const run = await response.json();
+        // KHÔNG tải lại trang. Ô "Cập nhật lần cuối" và biểu đồ đã tự đổi qua WebSocket
+        // (/topic/crawl và /topic/chart) — tải lại là che mất đúng cái đang muốn cho thấy.
         output.textContent =
-            'Trạng thái: ' + run.status +
-            '\nTài khoản: ' + run.totalAccounts +
-            '\nThành công: ' + run.succeededPosts + '/' + run.totalPosts +
-            '\nLỗi: ' + run.failedPosts +
-            '\nMất: ' + run.durationMs + ' ms';
-        // Tải lại trang để ô "Cập nhật lần cuối" hiện số liệu mới.
-        setTimeout(() => window.location.reload(), 1200);
+            'Xong sau ' + run.durationMs + ' ms — ' +
+            run.succeededPosts + '/' + run.totalPosts + ' bài.\n' +
+            'Ô "Cập nhật lần cuối" và biểu đồ phía trên vừa tự đổi, không tải lại trang.';
     } catch (error) {
         output.textContent = 'Lỗi: ' + error;
     }

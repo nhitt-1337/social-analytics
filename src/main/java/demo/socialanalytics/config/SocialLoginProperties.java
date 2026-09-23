@@ -15,7 +15,15 @@ public record SocialLoginProperties(
 
     public record Credentials(
         @DefaultValue("") String clientId,
-        @DefaultValue("") String clientSecret
+        @DefaultValue("") String clientSecret,
+
+        // Quyền xin từ nhà cung cấp.
+        //
+        // Để cấu hình được vì mỗi app khai quyền khác nhau: Facebook chỉ cấp sẵn
+        // `public_profile`, còn `email` phải bật riêng trong Use cases. Xin một quyền app
+        // chưa có thì Facebook chặn ngay ở màn hình đăng nhập ("Invalid Scopes: email"),
+        // nên phải bỏ được quyền đó mà không cần sửa code.
+        @DefaultValue({"public_profile", "email"}) java.util.List<String> scopes
     ) {
         public boolean isConfigured() {
             return !clientId.isBlank() && !clientSecret.isBlank();

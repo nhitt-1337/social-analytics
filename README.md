@@ -220,9 +220,15 @@ http://localhost:8080/api/v1/login/oauth2/code/x
 - **Enforce HTTPS.** Facebook mặc định bắt redirect URI dùng HTTPS; `http://localhost` thường được
   miễn trừ. Nếu vẫn bị từ chối thì tắt *Enforce HTTPS* trong Facebook Login → Settings, hoặc dùng
   một đường hầm HTTPS (ngrok) rồi khai URI của nó.
-- **Quyền `email`.** Trong Development mode thì dùng được ngay với các tài khoản có vai trò trong
-  app. Người dùng vẫn có quyền từ chối chia sẻ email — khi đó `email` là `null` và app vẫn đăng
-  nhập bình thường.
+- **Quyền `email` phải bật riêng.** App Facebook mới chỉ có sẵn `public_profile`. Xin một quyền
+  app chưa được cấp thì Facebook chặn ngay ở màn hình đăng nhập:
+  `Invalid Scopes: email`. Chưa bật thì chạy với `FACEBOOK_SCOPES=public_profile` — app vẫn hoạt
+  động, chỉ là `email` bằng `null` (tài khoản X/Twitter cũng vậy, code đã xử lý sẵn).
+
+  Vì vậy scope là **cấu hình**, không cứng trong code:
+  ```bash
+  FACEBOOK_SCOPES=public_profile ./mvnw spring-boot:run
+  ```
 
 ### Hai thứ đã chỉnh so với mặc định của Spring Security
 
@@ -379,6 +385,38 @@ Mỗi lần chạy ghi một dòng vào bảng `crawl_runs`, dashboard đọc d�
 không giữ trong bộ nhớ vì mốc thời gian này phải đúng cả sau khi restart — hiện số liệu cũ mà nói
 là vừa cập nhật thì tệ hơn là nói thẳng "chưa chạy lần nào". Dashboard có thêm nút **Chạy cập nhật
 ngay** để khỏi đợi hết 1 giờ.
+
+### Vì sao số liệu là giả lập — và tại sao không thể khác
+
+`SocialApiClient` trả về dữ liệu giả, **không** phải số liệu Facebook thật. Đây là giới hạn của
+nền tảng Facebook, không phải thiếu sót của project. Đã kiểm chứng bằng access token thật lấy
+từ bảng `oauth2_authorized_clients` sau khi đăng nhập Facebook thành công:
+
+| Gọi thử | Kết quả |
+|---|---|
+| `GET /me` | ✅ trả về đúng id và tên — token hoạt động |
+| `GET /me/posts` | `{"data":[]}` — rỗng |
+| `GET /me/feed` | `{"data":[]}` — rỗng |
+| `GET /me/accounts` | không có Page nào |
+| scope `user_posts` | `Invalid Scopes` |
+| scope `pages_show_list`, `pages_read_engagement` | `Invalid Scopes` |
+
+Hai kết luận:
+
+- **Bài viết trên trang cá nhân: Facebook không cho đọc.** Cần quyền `user_posts`, mà quyền đó
+  phải qua App Review kèm xác minh doanh nghiệp. Không có quyền thì Graph API trả mảng **rỗng**
+  chứ không báo lỗi — dễ tưởng nhầm là code sai.
+- **Bài viết của Page: về lý thuyết làm được**, cần `pages_show_list` + `pages_read_engagement`,
+  nhưng phải thêm use case tương ứng trong console của app và nhiều khả năng vẫn qua App Review.
+
+Vì vậy phần đọc số liệu được thiết kế để **thay nguồn không phải sửa gì khác**:
+`SocialApiClient` là interface, `MockSocialApiClient` là một implementation. Nối API thật chỉ là
+thêm một implementation đọc access token đã lưu — `SocialMetricsUpdateJob`, `SocialMetricsCollector`
+và toàn bộ phần còn lại không đụng tới.
+
+Công thức giả lập dùng **đường cong bão hoà** (`1 - e^(-giờ/36)`) chứ không tăng tuyến tính:
+tương tác thật dồn vào một hai ngày đầu rồi chững lại. Tỷ lệ share ≈ 6% số like, bình luận ≈ 4% —
+theo tỷ lệ thường gặp trên mạng xã hội, để biểu đồ demo nhìn hợp lý.
 
 ### Còn thiếu
 
@@ -645,7 +683,7 @@ Swagger ở `/api/v1/swagger-ui.html`; quản trị ActiveMQ ở `localhost:8161
 ./mvnw test
 ```
 
-**335 test**, chạy trên H2 và broker ActiveMQ nhúng (`vm://`) ở `MODE=MySQL` — không cần dựng MySQL thật.
+**337 test**, chạy trên H2 và broker ActiveMQ nhúng (`vm://`) ở `MODE=MySQL` — không cần dựng MySQL thật.
 
 | Tầng | Kiểu test | Lớp test |
 |---|---|---|
@@ -655,7 +693,7 @@ Swagger ở `/api/v1/swagger-ui.html`; quản trị ActiveMQ ở `localhost:8161
 | Controller (lát cắt web) | `@WebMvcTest` + `@MockitoBean` | `PostControllerTest` (17) |
 | Đầu-cuối | `@SpringBootTest` + `MockMvc` | `PostControllerIntegrationTest` (8), `MetricControllerIntegrationTest` (7), `ExcelControllerIntegrationTest` (16) |
 | Bảo mật | `@SpringBootTest` + `MockMvc` | `SecurityRulesTest` (20), `OAuth2LoginTest` (11), `CsrfCookieTest` (1) |
-| Cấu hình Social Login | `ApplicationContextRunner` | `SocialLoginClientRegistrationsTest` (6) |
+| Cấu hình Social Login | `ApplicationContextRunner` | `SocialLoginClientRegistrationsTest` (8) |
 | JMS | `@SpringBootTest` + broker nhúng | `ImportMessagingIntegrationTest` (4), `RetryAndDeadLetterTest` (5), `StatisticsControllerIntegrationTest` (5) |
 | Thống kê | `@DataJpaTest` | `StatisticsServiceTest` (6) |
 | Biểu đồ | `@DataJpaTest` / `@SpringBootTest` | `ChartDataServiceTest` (11), `ChartControllerIntegrationTest` (6) |
@@ -817,7 +855,7 @@ Quy ước đã áp dụng:
 | Chạy nhiều instance | Job crawl sẽ crawl trùng (cờ chặn nằm trong bộ nhớ); WebSocket broker in-memory không chia sẻ giữa các instance |
 | Quản lý schema | `ddl-auto: update` — đã phải sửa tay một lần (`users.email`); nên chuyển sang Flyway |
 | Bảo mật `/soap` | Đang công khai có chủ ý; production cần WS-Security hoặc chặn ở tầng mạng |
-| `SocialApiClient` | Vẫn là dữ liệu giả; nối API thật chỉ cần thêm một implementation đọc token đã lưu |
+| `SocialApiClient` | Dữ liệu giả — **Facebook không cấp quyền đọc bài viết**, xem mục 6 |
 | Độ phủ `exception` | 59%, thấp nhất trong các gói |
 
 ### Phân lớp

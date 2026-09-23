@@ -34,16 +34,32 @@ public class MockSocialApiClient implements SocialApiClient {
                 "Nhà cung cấp trả lỗi tạm thời cho bài " + post.getExternalId());
         }
 
-        // Mốc riêng của từng bài, cố định qua các lần chạy.
-        long seed = Math.abs(post.getExternalId().hashCode() % 500) + 50L;
+        // "Sức hút" riêng của từng bài — tổng số like bài đó sẽ đạt được khi đã nguội.
+        // Cố định theo externalId nên mỗi lần crawl vẫn ra cùng một con số.
+        long potential = Math.abs(post.getExternalId().hashCode() % 260) + 40L;
 
         LocalDateTime since = post.getPostedAt() != null ? post.getPostedAt() : post.getCreatedAt();
         long hours = since == null ? 0 : Math.max(0, Duration.between(since, LocalDateTime.now()).toHours());
 
-        int likes = (int) (seed * 2 + hours * 3);
-        int shares = (int) (seed / 2 + hours);
-        int comments = (int) (seed / 4 + hours / 2);
-        int followers = (int) (seed * 20 + hours * 5);
+        // Đường cong BÃO HOÀ, không phải tăng tuyến tính.
+        //
+        // Tương tác thật dồn vào một hai ngày đầu rồi gần như đứng yên. Công thức cũ cộng thêm
+        // theo số giờ nên bài càng cũ số càng phình vô hạn — bài 10 ngày tuổi tự có thêm 720 like
+        // mà chẳng ai tương tác.
+        // Hệ số 36 giờ: sau ~1,5 ngày đạt quá nửa, sau ~4 ngày gần chạm trần.
+        double maturity = 1 - Math.exp(-hours / 36.0);
+
+        // Sàn 5% để bài vừa đăng không hiện 0 tuyệt đối.
+        int likes = (int) Math.round(potential * Math.max(0.05, maturity));
+
+        // Tỷ lệ theo thực tế mạng xã hội: share vài phần trăm số like, bình luận thấp hơn nữa.
+        // Công thức cũ cho share bằng ~31% số like, nhìn là biết không thật.
+        int shares = (int) Math.round(likes * 0.06);
+        int comments = (int) Math.round(likes * 0.04);
+
+        // Người theo dõi là chỉ số của TÀI KHOẢN, không phải của bài viết, nên gần như không
+        // đổi theo tuổi bài. Cho nhích rất nhẹ để biểu đồ không phải một đường thẳng tắp.
+        int followers = (int) (potential * 12 + hours / 24);
 
         return new SocialMetricsSnapshot(likes, shares, comments, followers);
     }

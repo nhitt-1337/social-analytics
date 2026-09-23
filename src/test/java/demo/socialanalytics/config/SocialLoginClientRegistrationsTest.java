@@ -87,6 +87,33 @@ class SocialLoginClientRegistrationsTest {
             });
     }
 
+    // Scope phải cấu hình được: Facebook chỉ cấp sẵn public_profile, `email` phải bật riêng
+    // trong Use cases. Xin quyền app chưa có thì Facebook chặn ngay ở màn hình đăng nhập
+    // ("Invalid Scopes: email") — phải bỏ được quyền đó mà không cần sửa code.
+    @Test
+    void scopeCauHinhDuocQuaProperties() {
+        runner.withPropertyValues(
+                "social.login.facebook.client-id=fb-id",
+                "social.login.facebook.client-secret=fb-secret",
+                "social.login.facebook.scopes=public_profile")
+            .run(context -> {
+                var facebook = context.getBean(ClientRegistrationRepository.class)
+                    .findByRegistrationId("facebook");
+                assertThat(facebook.getScopes()).containsExactly("public_profile");
+                assertThat(facebook.getScopes()).doesNotContain("email");
+            });
+    }
+
+    @Test
+    void khongKhaiScopeThiDungMacDinh() {
+        runner.withPropertyValues(
+                "social.login.facebook.client-id=fb-id",
+                "social.login.facebook.client-secret=fb-secret")
+            .run(context -> assertThat(context.getBean(ClientRegistrationRepository.class)
+                .findByRegistrationId("facebook").getScopes())
+                .containsExactlyInAnyOrder("public_profile", "email"));
+    }
+
     @Test
     void facebookKhongBamVaoMotPhienBanGraphApiCuThe() {
         runner.withPropertyValues(

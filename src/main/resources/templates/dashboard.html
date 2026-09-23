@@ -51,13 +51,15 @@
     <div th:if="${lastRun != null}">
         <p class="stat">
             <span class="muted">Cập nhật lần cuối</span><br>
-            <strong th:text="${#temporals.format(lastRun.startedAt, 'HH:mm:ss dd/MM/yyyy')}">--</strong>
-            <span class="badge"
+            <!-- id để JavaScript cập nhật tại chỗ khi nhận tin qua WebSocket, khỏi tải lại trang -->
+            <strong id="lastRunTime"
+                    th:text="${#temporals.format(lastRun.startedAt, 'HH:mm:ss dd/MM/yyyy')}">--</strong>
+            <span id="lastRunStatus" class="badge"
                   th:classappend="${lastRun.status == 'SUCCESS'} ? 'ok'
                                 : (${lastRun.status == 'RUNNING'} ? 'run' : 'warn')"
                   th:text="${lastRun.status}">--</span>
         </p>
-        <p class="muted">
+        <p class="muted" id="lastRunStats">
             <span th:text="${lastRun.succeededPosts}">0</span>/<span th:text="${lastRun.totalPosts}">0</span>
             bài cập nhật thành công
             · <span th:text="${lastRun.failedPosts}">0</span> lỗi

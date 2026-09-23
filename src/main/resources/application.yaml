@@ -77,9 +77,15 @@ social:
     facebook:
       client-id: ${FACEBOOK_CLIENT_ID:}
       client-secret: ${FACEBOOK_CLIENT_SECRET:}
+      # Facebook chỉ cấp sẵn public_profile. Muốn có email thì phải bật quyền đó trong
+      # Use cases của app, nếu không Facebook chặn ngay ở màn hình đăng nhập:
+      #   "Invalid Scopes: email"
+      # Chưa bật thì đặt FACEBOOK_SCOPES=public_profile — app vẫn chạy, chỉ là email null.
+      scopes: ${FACEBOOK_SCOPES:public_profile,email}
     x:
       client-id: ${X_CLIENT_ID:}
       client-secret: ${X_CLIENT_SECRET:}
+      scopes: ${X_SCOPES:users.read,tweet.read}
 
   # Dịch vụ tỷ giá SOAP mà ứng dụng TIÊU THỤ.
   # Mặc định trỏ vào chính endpoint SOAP của ứng dụng này (đóng vai nhà cung cấp giả lập)

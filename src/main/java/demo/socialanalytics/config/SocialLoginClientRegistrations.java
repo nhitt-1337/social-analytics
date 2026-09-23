@@ -78,7 +78,7 @@ public class SocialLoginClientRegistrations {
             .clientId(credentials.clientId())
             .clientSecret(credentials.clientSecret())
             .clientName("Facebook")
-            .scope("public_profile", "email")
+            .scope(credentials.scopes().toArray(String[]::new))
             .authorizationUri("https://www.facebook.com/dialog/oauth")
             .tokenUri("https://graph.facebook.com/oauth/access_token")
             // Xin luôn ảnh đại diện. Tự ghép URL graph.facebook.com/{id}/picture mà không kèm
@@ -94,6 +94,7 @@ public class SocialLoginClientRegistrations {
             .clientId(credentials.clientId())
             .clientSecret(credentials.clientSecret())
             .clientName("X (Twitter)")
+            .scope(credentials.scopes().toArray(String[]::new))
             .build();
     }
 }
