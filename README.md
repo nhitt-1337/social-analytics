@@ -11,9 +11,14 @@ Spring Boot 4.1 · Java 21 · MySQL 8.4 · ActiveMQ
 ## Chạy
 
 ```bash
+cp .env.example .env      # điền credential vào đây; .env đã nằm trong .gitignore
 docker compose up -d      # MySQL (3306) + ActiveMQ (61616, quản trị 8161 admin/admin)
 ./mvnw spring-boot:run
 ```
+
+Docker Compose tự đọc `.env`; Spring Boot đọc qua `spring.config.import` khai trong
+`application.yaml`. Không có `.env` thì app vẫn chạy bằng giá trị mặc định
+(`optional:` nên không bắt buộc).
 
 Đóng gói:
 
@@ -22,14 +27,7 @@ docker compose up -d      # MySQL (3306) + ActiveMQ (61616, quản trị 8161 ad
 java -jar target/social-analytics-0.0.1-SNAPSHOT.jar
 ```
 
-Bật Social Login (xem phần cấu hình bên dưới):
-
-```bash
-FACEBOOK_CLIENT_ID=... FACEBOOK_CLIENT_SECRET=... FACEBOOK_SCOPES=public_profile \
-  ./mvnw spring-boot:run
-```
-
-Muốn xem job crawl chạy ngay thay vì đợi 1 giờ:
+Biến môi trường vẫn ghi đè được `.env`, tiện khi muốn thử nhanh:
 
 ```bash
 CRAWL_INITIAL_DELAY=PT10S CRAWL_INTERVAL=PT60S ./mvnw spring-boot:run
@@ -92,7 +90,7 @@ trang HTML chuyển hướng về `/login`.
 
 ## Cấu hình
 
-Đều có mặc định cho dev, đổi bằng biến môi trường:
+Đặt trong `.env` (xem `.env.example`) hoặc truyền qua biến môi trường. Đều có mặc định cho dev:
 
 | Nhóm | Biến |
 |---|---|

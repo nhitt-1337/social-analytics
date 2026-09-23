@@ -1,4 +1,8 @@
 spring:
+  # Nạp .env nếu có. Docker Compose tự đọc file này, Spring Boot thì phải khai.
+  config:
+    import: optional:file:./.env[.properties]
+
   application:
     name: social-analytics
 
