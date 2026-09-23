@@ -59,7 +59,15 @@ public class SecurityConfig {
             // đọc được mà gắn vào header khi gọi API bằng fetch/axios.
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+                .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                // Bỏ CSRF cho endpoint WebSocket.
+                //
+                // SockJS khi phải lùi về HTTP sẽ dùng POST cho các khung truyền, mà những POST
+                // đó không kèm được token -> CSRF chặn và kết nối không bao giờ mở được.
+                // Endpoint này vẫn được bảo vệ bằng hai lớp khác: phải đăng nhập mới vào được
+                // (anyRequest().authenticated()) và chỉ nhận kết nối từ cùng nguồn gốc
+                // (setAllowedOriginPatterns trong WebSocketConfig).
+                .ignoringRequestMatchers(WebSocketConfig.ENDPOINT + "/**"))
 
             // Từ Spring Security 6, token CSRF được nạp lười — không chỗ nào đọc tới thì cookie
             // không bao giờ được gửi về trình duyệt. Filter này chạm vào token ở mọi request

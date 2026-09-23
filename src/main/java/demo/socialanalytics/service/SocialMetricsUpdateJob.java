@@ -1,6 +1,8 @@
 package demo.socialanalytics.service;
 
 import demo.socialanalytics.config.CrawlProperties;
+import demo.socialanalytics.dto.response.CrawlRunResponse;
+import demo.socialanalytics.messaging.DashboardBroadcaster;
 import demo.socialanalytics.entity.CrawlRun;
 import demo.socialanalytics.entity.CrawlStatus;
 import demo.socialanalytics.repository.CrawlRunRepository;
@@ -31,6 +33,8 @@ public class SocialMetricsUpdateJob {
     private final CrawlRunRepository crawlRunRepository;
     private final SocialMetricsCollector collector;
     private final CrawlProperties properties;
+    private final DashboardBroadcaster broadcaster;
+    private final ChartDataService chartDataService;
 
     // Chặn hai lần chạy chồng lên nhau. fixedDelay đã lo cho lịch tự động, nhưng nút "chạy ngay"
     // trên dashboard có thể bấm đúng lúc job định kỳ đang chạy.
@@ -43,12 +47,16 @@ public class SocialMetricsUpdateJob {
         PostRepository postRepository,
         CrawlRunRepository crawlRunRepository,
         SocialMetricsCollector collector,
-        CrawlProperties properties
+        CrawlProperties properties,
+        DashboardBroadcaster broadcaster,
+        ChartDataService chartDataService
     ) {
         this.postRepository = postRepository;
         this.crawlRunRepository = crawlRunRepository;
         this.collector = collector;
         this.properties = properties;
+        this.broadcaster = broadcaster;
+        this.chartDataService = chartDataService;
     }
 
     // fixedDelay chứ không phải fixedRate: đếm 1 giờ từ lúc lần trước KẾT THÚC.
@@ -154,7 +162,27 @@ public class SocialMetricsUpdateJob {
         Duration elapsed = Duration.ofNanos(System.nanoTime() - startedNanos);
         log.info("Crawl xong sau {} ms: {}/{} bài thành công, {} lỗi, trạng thái {}",
             elapsed.toMillis(), succeeded, totalPosts, failed, saved.getStatus());
+
+        notifyDashboards(saved, succeeded);
         return saved;
+    }
+
+    // Đẩy dữ liệu mới xuống các dashboard đang mở.
+    //
+    // Bọc try/catch quanh CẢ KHỐI, không chỉ dựa vào việc broadcaster tự nuốt lỗi: việc tính
+    // dữ liệu biểu đồ nằm ngoài broadcaster, nó hỏng thì ngoại lệ vẫn thoát ra và làm hỏng
+    // kết quả lần crawl — trong khi chỉ số đã ghi xong xuôi rồi.
+    private void notifyDashboards(CrawlRun run, int succeeded) {
+        try {
+            broadcaster.crawlFinished(CrawlRunResponse.of(run));
+            // Không bài nào cập nhật được thì biểu đồ chẳng có gì mới để vẽ.
+            if (succeeded > 0) {
+                broadcaster.chartUpdated(chartDataService.chartData(null, null));
+            }
+        } catch (Exception exception) {
+            log.warn("Không gửi được cập nhật realtime sau lần crawl {}: {}",
+                run.getId(), exception.getMessage());
+        }
     }
 
     private CrawlStatus statusOf(String problem, int succeeded, int failed) {

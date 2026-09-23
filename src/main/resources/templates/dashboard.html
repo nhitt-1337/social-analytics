@@ -27,6 +27,20 @@
 
     <hr>
 
+    <h2>
+        Tương tác theo ngày
+        <span id="liveBadge" class="badge warn">đang kết nối…</span>
+    </h2>
+    <p class="muted">
+        Biểu đồ tự cập nhật khi job crawl chạy xong hoặc khi import Excel — không cần tải lại trang.
+    </p>
+
+    <div class="chart-box"><canvas id="trendChart"></canvas></div>
+
+    <div class="chart-box chart-box--small"><canvas id="platformChart"></canvas></div>
+
+    <hr>
+
     <h2>Cập nhật dữ liệu</h2>
 
     <div th:if="${lastRun == null}" class="alert warn">
@@ -82,6 +96,11 @@
     <pre id="apiResult" class="result"></pre>
 </main>
 
+<!-- Tải từ CDN: không có mạng thì biểu đồ không hiện, phần còn lại của trang vẫn chạy. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
 <script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/chart-live.js}"></script>
 </body>
 </html>

@@ -63,3 +63,11 @@ body.centered {
 .provider-icon { width: 18px; height: 18px; flex-shrink: 0; }
 .provider-facebook { background: #1877f2; }
 .provider-x { background: #000; }
+
+/* ----- biểu đồ ----- */
+.chart-box {
+    position: relative; height: 280px; margin: 12px 0 20px;
+    background: #fff; border: 1px solid #e4e6eb; border-radius: 8px; padding: 12px;
+}
+.chart-box--small { height: 220px; max-width: 340px; }
+h2 .badge { font-weight: 500; }

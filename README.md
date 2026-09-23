@@ -12,7 +12,7 @@ Xây bằng **Spring Boot 4.1 / Java 21 / MySQL 8.4**.
 
 ## 1. Tình trạng
 
-Giai đoạn hiện tại: **JMS & Queue Handling**.
+Giai đoạn hiện tại: **WebSocket + Chart Visualization**.
 
 | Hạng mục | Trạng thái |
 |---|---|
@@ -27,8 +27,8 @@ Giai đoạn hiện tại: **JMS & Queue Handling**.
 | Unit test Service & Controller, `@DataJpaTest` | ✅ |
 | Background job crawl định kỳ (`@Scheduled` + `@Async`) | ✅ |
 | JMS: queue, listener, retry & DLQ (ActiveMQ) | ✅ |
-| Biểu đồ Chart.js | ⏳ |
-| WebSocket realtime | ⏳ |
+| Biểu đồ Chart.js | ✅ |
+| WebSocket realtime (STOMP + SockJS) | ✅ |
 
 ## 2. Chạy
 
@@ -74,6 +74,7 @@ API (nhận JSON) trả **401**, còn trang HTML bị chuyển hướng về `/l
 | POST | `/crawl/run` | Chạy job ngay — 409 khi đang có lần chạy dở |
 | GET | `/statistics` | Thống kê tổng hợp theo nền tảng |
 | GET | `/statistics/dead-letters` | Message đã vào hàng đợi thư chết |
+| GET | `/chart-data?platform=&days=` | Dữ liệu tổng hợp cho biểu đồ (days mặc định 7, tối đa 90) |
 
 Trang HTML (Thymeleaf):
 
@@ -448,13 +449,85 @@ JMS chỉ bảo đảm **"ít nhất một lần"**: broker giao lại khi liste
 dù lần trước có thể đã chạy xong. Nên `StatisticsService.refresh()` **tính lại từ đầu** chứ không
 cộng dồn — chạy một lần hay ba lần đều ra cùng kết quả.
 
-## 8. Kiểm thử
+## 8. WebSocket & Biểu đồ
+
+Dashboard vẽ biểu đồ bằng Chart.js và tự cập nhật khi có dữ liệu mới — không cần tải lại trang.
+
+```
+job crawl xong  ─┐
+                 ├─> DashboardBroadcaster ─> /topic/chart  ─> trình duyệt vẽ lại Chart.js
+listener import ─┘                           /topic/crawl
+                                             /topic/statistics
+```
+
+### Vì sao STOMP chứ không phải WebSocket trần
+
+WebSocket trần chỉ cho gửi/nhận chuỗi byte, không có khái niệm "chủ đề" hay "đăng ký". STOMP thêm
+đúng phần đó: một kết nối phục vụ được nhiều loại cập nhật, và trình duyệt chỉ nhận thứ nó đăng ký.
+Có test riêng cho điều này (`WebSocketBroadcastTest#chiNhanDuocChuDeDaDangKy`).
+
+**SockJS** làm lớp dự phòng: trình duyệt hoặc proxy nào chặn WebSocket thì tự lùi về HTTP
+long-polling.
+
+### Gửi kèm dữ liệu, không gửi tín hiệu suông
+
+Server đẩy xuống **dữ liệu biểu đồ đã tính sẵn**, không phải thông báo "có thay đổi". Nếu chỉ báo
+suông thì mọi trình duyệt đang mở sẽ cùng lúc gọi lại `/chart-data`, dồn tải vào đúng thời điểm
+vừa crawl xong.
+
+### `/chart-data`: lấy lần đo cuối mỗi ngày, không cộng dồn
+
+Một bài có thể được crawl nhiều lần trong ngày. Cộng hết mọi dòng lại thì số liệu **phồng lên theo
+tần suất crawl** chứ không phản ánh tương tác thật — đổi lịch crawl từ 1 giờ xuống 30 phút là biểu
+đồ tự nhiên gấp đôi.
+
+Câu truy vấn JOIN với một bảng con chọn ra lần đo cuối của mỗi bài trong mỗi ngày rồi mới cộng:
+
+```sql
+JOIN (SELECT post_id, CAST(collected_at AS DATE) AS d, MAX(id) AS last_id
+      FROM social_metrics WHERE collected_at >= :from
+      GROUP BY post_id, CAST(collected_at AS DATE)) latest ON m.id = latest.last_id
+```
+
+Là native query vì JPQL không viết được bảng con trong `FROM`. Hai chi tiết để chạy được trên cả
+MySQL lẫn H2: dùng `CAST(... AS DATE)` thay cho `DATE(...)`, và alias là `metric_day` chứ không
+phải `day` — `day` là **từ khoá dành riêng** của H2.
+
+### Bảo mật cho WebSocket
+
+Endpoint `/ws/**` được **miễn CSRF**: SockJS khi lùi về HTTP dùng POST cho các khung truyền mà
+không gắn được token, có CSRF thì kết nối không bao giờ mở được. Bù lại bằng hai lớp khác:
+
+- Bắt buộc đăng nhập (`anyRequest().authenticated()`).
+- Chỉ nhận kết nối từ **cùng nguồn gốc** (`setAllowedOriginPatterns`). Để `"*"` thì mọi trang web
+  khác đều mở được kết nối tới đây bằng phiên đăng nhập của người dùng.
+
+### Lỗi phát tin không được làm hỏng nghiệp vụ
+
+Phát tin realtime là việc phụ. Cả `SocialMetricsUpdateJob` lẫn `ImportCompletedListener` đều bọc
+try/catch quanh **cả khối** phát tin, không chỉ dựa vào việc `DashboardBroadcaster` tự nuốt lỗi —
+vì phần tính dữ liệu biểu đồ nằm **ngoài** broadcaster. Bỏ sót chỗ này thì:
+
+- Ở job crawl: chỉ số đã ghi xong nhưng lần crawl bị báo là thất bại.
+- Ở listener JMS: thống kê đã cập nhật đúng nhưng message bị giao lại rồi vào DLQ — DLQ đầy những
+  message thực ra đã xử lý xong, che mất message hỏng thật.
+
+### Giới hạn
+
+`enableSimpleBroker` giữ danh sách người đăng ký **trong bộ nhớ**, đủ cho một instance. Chạy nhiều
+instance thì trình duyệt nối vào instance nào chỉ nhận được cập nhật do instance đó phát — khi ấy
+cần broker ngoài qua `enableStompBrokerRelay`.
+
+Chart.js, SockJS và stomp.js tải từ CDN: không có mạng thì biểu đồ không hiện, phần còn lại của
+trang vẫn chạy.
+
+## 9. Kiểm thử
 
 ```bash
 ./mvnw test
 ```
 
-**265 test**, chạy trên H2 và broker ActiveMQ nhúng (`vm://`) ở `MODE=MySQL` — không cần dựng MySQL thật.
+**292 test**, chạy trên H2 và broker ActiveMQ nhúng (`vm://`) ở `MODE=MySQL` — không cần dựng MySQL thật.
 
 | Tầng | Kiểu test | Lớp test |
 |---|---|---|
@@ -463,12 +536,14 @@ cộng dồn — chạy một lần hay ba lần đều ra cùng kết quả.
 | Repository | `@DataJpaTest` | `PostRepositoryTest` (11), `SocialMetricRepositoryTest` (9) |
 | Controller (lát cắt web) | `@WebMvcTest` + `@MockitoBean` | `PostControllerTest` (17) |
 | Đầu-cuối | `@SpringBootTest` + `MockMvc` | `PostControllerIntegrationTest` (8), `MetricControllerIntegrationTest` (7), `ExcelControllerIntegrationTest` (16) |
-| Bảo mật | `@SpringBootTest` + `MockMvc` | `SecurityRulesTest` (17), `OAuth2LoginTest` (11), `CsrfCookieTest` (1) |
+| Bảo mật | `@SpringBootTest` + `MockMvc` | `SecurityRulesTest` (20), `OAuth2LoginTest` (11), `CsrfCookieTest` (1) |
 | Cấu hình Social Login | `ApplicationContextRunner` | `SocialLoginClientRegistrationsTest` (6) |
 | JMS | `@SpringBootTest` + broker nhúng | `ImportMessagingIntegrationTest` (4), `RetryAndDeadLetterTest` (5), `StatisticsControllerIntegrationTest` (5) |
 | Thống kê | `@DataJpaTest` | `StatisticsServiceTest` (6) |
+| Biểu đồ | `@DataJpaTest` / `@SpringBootTest` | `ChartDataServiceTest` (11), `ChartControllerIntegrationTest` (6) |
+| WebSocket | `@SpringBootTest(RANDOM_PORT)` + STOMP client | `WebSocketBroadcastTest` (4) |
 | Social Login | Mockito / `@DataJpaTest` | `SocialUserAttributesTest` (12), `SocialLoginUserServiceTest` (8), `JpaOAuth2AuthorizedClientServiceTest` (8) |
-| Job & đa luồng | Mockito | `SocialMetricsCollectorTest` (6), `SocialMetricsUpdateJobTest` (9), `MockSocialApiClientTest` (7) |
+| Job & đa luồng | Mockito | `SocialMetricsCollectorTest` (6), `SocialMetricsUpdateJobTest` (12), `MockSocialApiClientTest` (7) |
 | Job & đa luồng | `@SpringBootTest` | `AsyncConfigTest` (6), `SocialMetricsJobIntegrationTest` (6), `CrawlControllerIntegrationTest` (8) |
 
 Quy ước đã áp dụng:
@@ -505,11 +580,15 @@ Quy ước đã áp dụng:
 - Test JMS chạy trên broker **nhúng** (`vm://localhost?broker.persistent=false`) nên `./mvnw test`
   không cần Docker. Listener chạy luồng khác nên dùng `Awaitility` (`await().untilAsserted`) thay
   vì khẳng định ngay — hoặc `Thread.sleep`, thứ cho ra test lúc xanh lúc đỏ tuỳ máy.
+- Test WebSocket chạy trên cổng thật (`RANDOM_PORT`) với `WebSocketStompClient` — `MockMvc` không
+  có WebSocket. Endpoint `/ws` yêu cầu đăng nhập nên test mở riêng bằng một `SecurityFilterChain`
+  đặt trước, **chỉ trong test**, để kiểm đúng việc truyền tin; việc endpoint được bảo vệ ở cấu
+  hình thật thì `SecurityRulesTest` kiểm.
 - **Cảnh giác khi profile test đặt giá trị khác production.** `spring.activemq.pool.enabled=false`
   trong profile test đã che mất lỗi chỉ xảy ra ở production (thiếu `ConnectionFactory`), và app
   chỉ chết khi chạy thật. Cấu hình nào lệch giữa hai bên thì phải có lý do rõ ràng.
 
-## 9. Thiết kế
+## 10. Thiết kế
 
 **Phân lớp:** `Controller` (mỏng, chỉ `@Valid` + delegate, không truy vấn DB) → `Service`
 (nghiệp vụ, `@Transactional`) → `Repository` (Spring Data JPA) → `DTO` (record + Bean Validation)

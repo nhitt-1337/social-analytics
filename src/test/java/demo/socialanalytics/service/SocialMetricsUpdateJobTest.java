@@ -4,6 +4,8 @@ import demo.socialanalytics.config.CrawlProperties;
 import demo.socialanalytics.entity.CrawlRun;
 import demo.socialanalytics.entity.CrawlStatus;
 import demo.socialanalytics.repository.CrawlRunRepository;
+import demo.socialanalytics.dto.response.ChartDataResponse;
+import demo.socialanalytics.messaging.DashboardBroadcaster;
 import demo.socialanalytics.repository.PostRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -28,6 +31,8 @@ class SocialMetricsUpdateJobTest {
     @Mock PostRepository postRepository;
     @Mock CrawlRunRepository crawlRunRepository;
     @Mock SocialMetricsCollector collector;
+    @Mock DashboardBroadcaster broadcaster;
+    @Mock ChartDataService chartDataService;
 
     SocialMetricsUpdateJob job;
 
@@ -35,9 +40,14 @@ class SocialMetricsUpdateJobTest {
         return new CrawlProperties(true, 8, 100, timeoutSeconds, new CrawlProperties.Mock(0, 0));
     }
 
+    private SocialMetricsUpdateJob newJob(int timeoutSeconds) {
+        return new SocialMetricsUpdateJob(postRepository, crawlRunRepository, collector,
+            properties(timeoutSeconds), broadcaster, chartDataService);
+    }
+
     @BeforeEach
     void setUp() {
-        job = new SocialMetricsUpdateJob(postRepository, crawlRunRepository, collector, properties(30));
+        job = newJob(30);
         // save() trả lại chính entity được truyền vào, như JPA thật.
         lenient().when(crawlRunRepository.save(any(CrawlRun.class))).thenAnswer(invocation -> {
             CrawlRun run = invocation.getArgument(0);
@@ -89,6 +99,44 @@ class SocialMetricsUpdateJobTest {
         accountReturns(1L, 3, 0, 3);
 
         assertThat(job.runOnce().getStatus()).isEqualTo(CrawlStatus.FAILED);
+    }
+
+    // Crawl xong có chỉ số mới -> đẩy xuống dashboard đang mở.
+    @Test
+    void phatTinRealtimeSauKhiCrawlXong() {
+        when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
+        accountReturns(1L, 2, 2, 0);
+        when(chartDataService.chartData(null, null)).thenReturn(mock(ChartDataResponse.class));
+
+        job.runOnce();
+
+        verify(broadcaster).crawlFinished(any());
+        verify(broadcaster).chartUpdated(any());
+    }
+
+    // Không bài nào cập nhật được thì biểu đồ chẳng có gì mới để vẽ -> khỏi phát tin và khỏi
+    // tính lại dữ liệu biểu đồ.
+    @Test
+    void khongCoBaiNaoThanhCongThiKhongPhatDuLieuBieuDo() {
+        when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
+        accountReturns(1L, 2, 0, 2);
+
+        job.runOnce();
+
+        verify(broadcaster).crawlFinished(any());
+        verify(broadcaster, never()).chartUpdated(any());
+        verifyNoInteractions(chartDataService);
+    }
+
+    // Lỗi khi phát tin realtime KHÔNG được làm hỏng kết quả lần crawl.
+    @Test
+    void loiPhatTinKhongLamHongKetQuaCrawl() {
+        when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
+        accountReturns(1L, 2, 2, 0);
+        when(chartDataService.chartData(null, null))
+            .thenThrow(new IllegalStateException("không tính được dữ liệu biểu đồ"));
+
+        assertThatCode(() -> job.runOnce()).doesNotThrowAnyException();
     }
 
     @Test
@@ -185,7 +233,7 @@ class SocialMetricsUpdateJobTest {
     // Quá hạn thì bỏ dở phần còn lại và vẫn ghi lại lần chạy, thay vì treo mãi.
     @Test
     void quaThoiGianChoPhepThiBoDoVaVanGhiLai() {
-        job = new SocialMetricsUpdateJob(postRepository, crawlRunRepository, collector, properties(1));
+        job = newJob(1);
         when(crawlRunRepository.save(any(CrawlRun.class))).thenAnswer(i -> i.getArgument(0));
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
         when(collector.collectForAccount(1L)).thenReturn(new CompletableFuture<>()); // không bao giờ xong
@@ -200,7 +248,7 @@ class SocialMetricsUpdateJobTest {
     // Sau một lần quá hạn, job vẫn phải chạy được lần sau (cờ running được thả trong finally).
     @Test
     void vanChayDuocSauKhiLanTruocQuaHan() {
-        job = new SocialMetricsUpdateJob(postRepository, crawlRunRepository, collector, properties(1));
+        job = newJob(1);
         when(crawlRunRepository.save(any(CrawlRun.class))).thenAnswer(i -> i.getArgument(0));
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
         when(collector.collectForAccount(1L))

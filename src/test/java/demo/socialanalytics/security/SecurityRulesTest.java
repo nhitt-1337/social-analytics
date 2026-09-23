@@ -86,6 +86,21 @@ class SecurityRulesTest {
                 .andExpect(status().isOk());
         }
 
+        // Endpoint WebSocket được miễn CSRF (SockJS không gắn được token khi lùi về HTTP),
+        // nên nó phải được bảo vệ bằng lớp còn lại: bắt buộc đăng nhập.
+        @Test
+        void khongDangNhapThiKhongMoDuocWebSocket() throws Exception {
+            mvc.perform(page("get", "/ws/info"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/api/v1/login"));
+        }
+
+        @Test
+        void khongDangNhapThiKhongXemDuocDuLieuBieuDo() throws Exception {
+            mvc.perform(api("get", "/chart-data").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+        }
+
         @Test
         void khongDangNhapThiKhongXuatDuocBaoCao() throws Exception {
             mvc.perform(api("get", "/export-report").accept(MediaType.APPLICATION_JSON))
@@ -134,6 +149,14 @@ class SecurityRulesTest {
         void deleteThieuTokenCungBiChan() throws Exception {
             mvc.perform(api("delete", "/posts/1"))
                 .andExpect(status().isForbidden());
+        }
+
+        // /ws được miễn CSRF có chủ đích: SockJS khi lùi về HTTP dùng POST mà không gắn
+        // được token, có CSRF thì kết nối không bao giờ mở được.
+        @Test
+        void endpointWebSocketDuocMienCsrf() throws Exception {
+            mvc.perform(api("post", "/ws/info"))
+                .andExpect(status().is(org.hamcrest.Matchers.not(403)));
         }
 
         // GET không làm thay đổi dữ liệu nên không cần token.

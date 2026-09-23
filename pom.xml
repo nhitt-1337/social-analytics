@@ -66,6 +66,12 @@
 			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
 		</dependency>
 
+		<!-- WebSocket + STOMP: đẩy dữ liệu mới xuống dashboard theo thời gian thực. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+
 		<!-- JMS qua ActiveMQ Classic: hàng đợi thông báo import xong. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
