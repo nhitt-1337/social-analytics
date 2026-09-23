@@ -115,7 +115,7 @@ class SocialMetricsCollectorTest {
         assertThat(result.failed()).isEqualTo(1);
     }
 
-    // Future phải hoàn tất BÌNH THƯỜNG kể cả khi mọi bài đều lỗi: job dùng
+    // Future phải hoàn tất bình thường dù mọi bài đều lỗi, vì allOf() hỏng một cái là hỏng cả lô
     @Test
     void futureHoanTatDuMoiBaiLoi() throws Exception {
         when(postRepository.findByUserIdOrderByIdAsc(1L)).thenReturn(List.of(post(10L, "fb-1")));

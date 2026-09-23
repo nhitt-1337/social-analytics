@@ -35,7 +35,7 @@ import java.util.Set;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // Đường dẫn công khai: trang đăng nhập
+    // Đường dẫn công khai: trang đăng nhập, luồng OAuth2, tài nguyên tĩnh và tài liệu API
     private static final String[] PUBLIC_PATHS = {
         "/login", "/error", "/css/**", "/js/**", "/favicon.ico",
         "/oauth2/**", "/login/oauth2/**",
@@ -48,7 +48,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
         HttpSecurity http,
         SocialLoginUserService socialLoginUserService,
-        // ObjectProvider: chưa cấu hình client id/secret thì Spring Boot không tạo
+        // Chưa cấu hình Social Login thì không có bean này; lấy kiểu "có thì dùng" để app vẫn chạy
         ObjectProvider<ClientRegistrationRepository> clientRegistrations
     ) throws Exception {
 

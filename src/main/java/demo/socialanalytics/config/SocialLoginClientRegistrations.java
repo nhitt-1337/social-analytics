@@ -36,7 +36,7 @@ public class SocialLoginClientRegistrations {
             registrations.add(x(properties.x()));
         }
         if (registrations.isEmpty()) {
-            // Có client id nhưng thiếu secret -> nói thẳng
+            // Có client id nhưng thiếu secret thì báo thẳng, đừng để nút đăng nhập biến mất lặng lẽ
             throw new IllegalStateException(
                 "Social Login cần CẢ client-id và client-secret. Kiểm tra FACEBOOK_CLIENT_SECRET "
                     + "hoặc X_CLIENT_SECRET.");
