@@ -19,8 +19,7 @@
         </div>
     </header>
 
-    <!-- Đăng xuất phải là POST: nếu để GET thì chỉ cần dụ người dùng bấm vào một đường link
-         là đăng xuất được họ — đúng kiểu tấn công CSRF. -->
+    <!-- Đăng xuất phải là POST, để GET thì chỉ cần dụ bấm link là đăng xuất được người khác -->
     <form th:action="@{/logout}" method="post">
         <button class="btn" type="submit">Đăng xuất</button>
     </form>
@@ -56,8 +55,7 @@
     </p>
 
     <div class="row">
-        <!-- GET nên không cần token CSRF. Trình duyệt tự tải file nhờ header
-             Content-Disposition: attachment do server đặt. -->
+        <!-- GET nên không cần token CSRF -->
         <a class="btn" th:href="@{/export-report}">Báo cáo tương tác</a>
         <a class="btn btn-ghost" th:href="@{/export/posts}">Bài viết</a>
         <a class="btn btn-ghost" th:href="@{/export/statistics}">Thống kê</a>
@@ -97,7 +95,7 @@
     <div th:if="${lastRun != null}">
         <p class="stat">
             <span class="muted">Cập nhật lần cuối</span><br>
-            <!-- id để JavaScript cập nhật tại chỗ khi nhận tin qua WebSocket, khỏi tải lại trang -->
+            <!-- id để JavaScript cập nhật tại chỗ khi nhận tin qua WebSocket -->
             <strong id="lastRunTime"
                     th:text="${#temporals.format(lastRun.startedAt, 'HH:mm:ss dd/MM/yyyy')}">--</strong>
             <span id="lastRunStatus" class="badge"
@@ -144,7 +142,7 @@
     <pre id="apiResult" class="result"></pre>
 </main>
 
-<!-- Tải từ CDN: không có mạng thì biểu đồ không hiện, phần còn lại của trang vẫn chạy. -->
+<!-- Tải từ CDN: không có mạng thì biểu đồ không hiện -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>

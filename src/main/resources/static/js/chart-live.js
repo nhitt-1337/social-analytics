@@ -1,8 +1,5 @@
-// Biểu đồ Chart.js + cập nhật realtime qua STOMP/WebSocket.
-//
-// Luồng: tải dữ liệu lần đầu bằng REST (/chart-data) rồi đăng ký /topic/chart.
-// Server đẩy xuống DỮ LIỆU ĐÃ TÍNH SẴN chứ không phải tín hiệu "có thay đổi" — nếu chỉ báo suông
-// thì mọi trình duyệt đang mở sẽ cùng lúc gọi lại API, dồn tải đúng lúc vừa crawl xong.
+// Tải dữ liệu lần đầu bằng REST rồi đăng ký /topic/chart.
+// Server đẩy xuống dữ liệu đã tính sẵn, không phải tín hiệu "có thay đổi".
 
 const API_BASE = '/api/v1';
 const COLORS = { likes: '#1877f2', shares: '#42b72a', comments: '#f7b928', followers: '#8b5cf6' };
@@ -108,10 +105,9 @@ function connectLiveUpdates() {
         return;
     }
     const client = new StompJs.Client({
-        // Dùng SockJS để trình duyệt hoặc proxy nào chặn WebSocket thì tự lùi về HTTP long-polling.
+        // SockJS: chặn WebSocket thì tự lùi về HTTP long-polling
         webSocketFactory: () => new SockJS(API_BASE + '/ws'),
-        // Mất kết nối thì tự nối lại sau 5s; không có dòng này thì tab mở lâu sẽ âm thầm
-        // ngừng cập nhật mà người dùng không biết.
+        // Tự nối lại sau 5s, nếu không tab mở lâu sẽ âm thầm ngừng cập nhật
         reconnectDelay: 5000
     });
 

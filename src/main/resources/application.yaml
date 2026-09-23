@@ -15,25 +15,21 @@ spring:
       hibernate:
         format_sql: true
 
-  # ActiveMQ: broker chạy bằng Docker Compose, xem README.
   activemq:
     broker-url: ${MQ_URL:tcp://localhost:61616}
     user: ${MQ_USER:admin}
     password: ${MQ_PASSWORD:admin}
-    # Không bật pool: `spring.activemq.pool.enabled=true` cần thêm thư viện pooled-jms, thiếu nó
-    # thì KHÔNG có ConnectionFactory nào được tạo và app chết lúc khởi động.
-    # Mặc định Spring Boot đã bọc trong CachingConnectionFactory nên mỗi lần gửi không phải
-    # mở kết nối mới — đủ cho nhu cầu ở đây.
+    # Không bật pool: cần thêm thư viện pooled-jms, thiếu nó thì không có ConnectionFactory
 
   jms:
-    # Hàng đợi (point-to-point), không phải topic: mỗi message chỉ MỘT listener xử lý.
+    # Hàng đợi point-to-point: mỗi message chỉ một listener xử lý
     pub-sub-domain: false
     listener:
-      # Phiên có transaction -> listener ném lỗi thì message quay lại hàng đợi và được giao lại.
+      # Listener ném lỗi thì message quay lại hàng đợi
       session:
         transacted: true
 
-  # Import Excel ở bước sau cần nhận file lớn hơn mặc định 1MB.
+  # Mặc định của Spring chỉ 1MB
   servlet:
     multipart:
       max-file-size: ${MAX_FILE_SIZE:10MB}
@@ -53,7 +49,7 @@ logging:
   level:
     root: ${LOG_LEVEL_ROOT:INFO}
     demo.socialanalytics: ${LOG_LEVEL_APP:DEBUG}
-    # Bật hai dòng dưới khi cần soi tham số bind vào câu SQL.
+    # Bật khi cần soi tham số bind vào SQL
     org.hibernate.SQL: ${LOG_LEVEL_SQL:DEBUG}
     org.hibernate.orm.jdbc.bind: ${LOG_LEVEL_SQL_PARAM:WARN}
   pattern:
@@ -66,45 +62,34 @@ logging:
       max-history: 7
 
 social:
-  # Social Login. Provider nào có ĐỦ client id + secret mới được đăng ký; không có cái nào thì
-  # trang /login hiện hướng dẫn cấu hình thay vì nút dẫn tới trang lỗi của nhà cung cấp.
-  #
-  # Redirect URI phải khai đúng y hệt bên trang quản trị ứng dụng của nhà cung cấp — chú ý tiền
-  # tố /api/v1 do server.servlet.context-path:
-  #   http://localhost:8080/api/v1/login/oauth2/code/facebook
-  #   http://localhost:8080/api/v1/login/oauth2/code/x
+  # Chỉ provider có đủ client id + secret mới được đăng ký.
+  # Redirect URI: http://localhost:8080/api/v1/login/oauth2/code/{facebook|x}
   login:
     facebook:
       client-id: ${FACEBOOK_CLIENT_ID:}
       client-secret: ${FACEBOOK_CLIENT_SECRET:}
-      # Facebook chỉ cấp sẵn public_profile. Muốn có email thì phải bật quyền đó trong
-      # Use cases của app, nếu không Facebook chặn ngay ở màn hình đăng nhập:
-      #   "Invalid Scopes: email"
-      # Chưa bật thì đặt FACEBOOK_SCOPES=public_profile — app vẫn chạy, chỉ là email null.
+      # App Facebook mới chỉ có public_profile; xin email chưa bật sẽ bị Invalid Scopes
       scopes: ${FACEBOOK_SCOPES:public_profile,email}
     x:
       client-id: ${X_CLIENT_ID:}
       client-secret: ${X_CLIENT_SECRET:}
       scopes: ${X_SCOPES:users.read,tweet.read}
 
-  # Dịch vụ tỷ giá SOAP mà ứng dụng TIÊU THỤ.
-  # Mặc định trỏ vào chính endpoint SOAP của ứng dụng này (đóng vai nhà cung cấp giả lập)
-  # để bản demo chạy được khi không có mạng. Ở thật thì đổi sang địa chỉ nhà cung cấp.
+  # Dịch vụ tỷ giá SOAP. Mặc định trỏ vào endpoint của chính app để demo chạy được offline.
   exchange-rate:
     endpoint: ${EXCHANGE_RATE_ENDPOINT:http://localhost:8080/api/v1/soap}
 
-  # Job cập nhật chỉ số mạng xã hội.
   crawl:
     enabled: ${CRAWL_ENABLED:true}
-    # Khoảng cách giữa hai lần chạy, tính từ lúc lần trước KẾT THÚC (ISO-8601 duration).
+    # Tính từ lúc lần trước kết thúc
     interval: ${CRAWL_INTERVAL:PT1H}
-    # Đợi ứng dụng khởi động xong hẳn rồi mới chạy lần đầu.
+
     initial-delay: ${CRAWL_INITIAL_DELAY:PT1M}
-    # Mỗi tài khoản là một tác vụ chạy song song.
+    # Mỗi tài khoản là một tác vụ song song
     pool-size: ${CRAWL_POOL_SIZE:8}
     queue-capacity: ${CRAWL_QUEUE_CAPACITY:100}
     timeout-seconds: ${CRAWL_TIMEOUT_SECONDS:300}
-    # Client giả lập; bỏ phần này khi nối API thật.
+    # Client giả lập, bỏ khi nối API thật
     mock:
       latency-ms: ${CRAWL_MOCK_LATENCY_MS:40}
       failure-rate: ${CRAWL_MOCK_FAILURE_RATE:0.1}

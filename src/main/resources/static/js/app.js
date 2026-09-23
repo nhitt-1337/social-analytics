@@ -1,6 +1,4 @@
-// Đọc token CSRF từ cookie XSRF-TOKEN.
-// Cookie này không đặt HttpOnly (xem SecurityConfig) nên JavaScript đọc được — đó là điều kiện
-// để kiểu gọi API bằng fetch dùng chung được cơ chế CSRF với form thường.
+// Cookie XSRF-TOKEN không đặt HttpOnly nên JavaScript đọc được
 function csrfToken() {
     const entry = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='));
     return entry ? decodeURIComponent(entry.split('=')[1]) : '';
@@ -13,20 +11,20 @@ async function demoApiCall() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Thiếu header này thì CsrfFilter trả 403 trước khi request tới controller.
+                // Thiếu header này là 403
                 'X-XSRF-TOKEN': csrfToken()
             },
             body: '{}'
         });
         const text = await response.text();
-        // 422 nghĩa là đã QUA được CSRF và chỉ còn vướng validate — đúng điều muốn minh hoạ.
+        // 422 nghĩa là đã qua CSRF, chỉ còn vướng validate
         output.textContent = 'HTTP ' + response.status + '\n' + text;
     } catch (error) {
         output.textContent = 'Lỗi: ' + error;
     }
 }
 
-// Bấm "Chạy cập nhật ngay": POST nên vẫn phải kèm token CSRF như mọi request đổi dữ liệu khác.
+// POST nên vẫn phải kèm token CSRF
 async function runCrawlNow() {
     const output = document.getElementById('crawlResult');
     output.textContent = 'Đang chạy...';
@@ -40,8 +38,7 @@ async function runCrawlNow() {
             return;
         }
         const run = await response.json();
-        // KHÔNG tải lại trang. Ô "Cập nhật lần cuối" và biểu đồ đã tự đổi qua WebSocket
-        // (/topic/crawl và /topic/chart) — tải lại là che mất đúng cái đang muốn cho thấy.
+        // Không tải lại trang: ô trạng thái và biểu đồ đã tự đổi qua WebSocket
         output.textContent =
             'Xong sau ' + run.durationMs + ' ms — ' +
             run.succeededPosts + '/' + run.totalPosts + ' bài.\n' +
@@ -51,8 +48,7 @@ async function runCrawlNow() {
     }
 }
 
-// Nhập Excel. Gửi bằng fetch chứ không phải form submit để hiện kết quả ngay tại chỗ —
-// import "chịu lỗi" nên phần errors mới là thứ đáng xem.
+// Dùng fetch thay form submit để hiện kết quả ngay tại chỗ
 async function importExcel() {
     const input = document.getElementById('importFile');
     const output = document.getElementById('importResult');
@@ -71,7 +67,7 @@ async function importExcel() {
     try {
         const response = await fetch('/api/v1/import-posts', {
             method: 'POST',
-            // Không đặt Content-Type: trình duyệt tự thêm boundary cho multipart.
+            // Không đặt Content-Type: trình duyệt tự thêm boundary
             headers: { 'X-XSRF-TOKEN': csrfToken(), 'Accept': 'application/json' },
             body: body
         });
@@ -83,8 +79,7 @@ async function importExcel() {
             return;
         }
 
-        // Bỏ qua vài dòng KHÔNG phải là thất bại: import chịu lỗi, dòng hỏng bị loại còn
-        // dòng đúng vẫn vào DB. Hiển thị phải nói rõ điều đó, nếu không nhìn như báo lỗi.
+        // Bỏ qua vài dòng không phải thất bại — hiển thị phải nói rõ
         output.className = data.imported > 0 ? 'alert ok' : 'alert warn';
         let text = data.imported > 0
             ? '✓ Đã nhập ' + data.imported + '/' + data.totalRows + ' bài viết.'

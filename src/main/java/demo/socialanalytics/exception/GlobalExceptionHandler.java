@@ -73,7 +73,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
     }
 
-    // File Excel hỏng, sai sheet hoặc thiếu cột bắt buộc -> lỗi của dữ liệu gửi lên, không phải lỗi server.
+    // File Excel hỏng, sai sheet hoặc thiếu cột bắt buộc -> lỗi của dữ liệu gửi lên, không phải
     @ExceptionHandler(ExcelParseException.class)
     public ResponseEntity<ErrorResponse> handleExcelParse(ExcelParseException exception) {
         return build(HttpStatus.BAD_REQUEST, exception.getMessage());
