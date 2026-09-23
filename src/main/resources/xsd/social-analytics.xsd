@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hợp đồng của dịch vụ SOAP. Đây là NGUỒN SỰ THẬT: các lớp Java được sinh ra từ file này lúc
+  build (jaxb2-maven-plugin), không phải chiều ngược lại.
+
+  Làm contract-first vì hợp đồng SOAP là thứ bên ngoài phụ thuộc vào. Nếu suy XSD ra từ lớp Java
+  thì đổi tên một trường trong code là hợp đồng đổi theo mà không ai hay, và mọi client đang
+  chạy sẽ hỏng.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://demo/socialanalytics/ws"
+           targetNamespace="http://demo/socialanalytics/ws"
+           elementFormDefault="qualified">
+
+    <!-- ===== Thống kê theo nền tảng ===== -->
+
+    <xs:element name="getPlatformSummaryRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <!-- Bỏ trống thì trả về tất cả nền tảng. -->
+                <xs:element name="platform" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="getPlatformSummaryResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="summary" type="tns:platformSummary" maxOccurs="unbounded" minOccurs="0"/>
+                <xs:element name="generatedAt" type="xs:dateTime"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="platformSummary">
+        <xs:sequence>
+            <xs:element name="platform" type="xs:string"/>
+            <xs:element name="postCount" type="xs:long"/>
+            <xs:element name="accountCount" type="xs:long"/>
+            <xs:element name="updatedAt" type="xs:dateTime" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- ===== Tỷ giá =====
+         Dịch vụ tỷ giá GIẢ LẬP, đóng vai nhà cung cấp SOAP bên ngoài. Nhờ vậy bản demo
+         chạy được khi không có mạng; ở thật thì trỏ client sang nhà cung cấp thương mại. -->
+
+    <xs:element name="getExchangeRateRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="fromCurrency" type="xs:string"/>
+                <xs:element name="toCurrency" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="getExchangeRateResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="fromCurrency" type="xs:string"/>
+                <xs:element name="toCurrency" type="xs:string"/>
+                <xs:element name="rate" type="xs:decimal"/>
+                <xs:element name="quotedAt" type="xs:dateTime"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

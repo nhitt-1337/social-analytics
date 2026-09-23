@@ -81,6 +81,12 @@ social:
       client-id: ${X_CLIENT_ID:}
       client-secret: ${X_CLIENT_SECRET:}
 
+  # Dịch vụ tỷ giá SOAP mà ứng dụng TIÊU THỤ.
+  # Mặc định trỏ vào chính endpoint SOAP của ứng dụng này (đóng vai nhà cung cấp giả lập)
+  # để bản demo chạy được khi không có mạng. Ở thật thì đổi sang địa chỉ nhà cung cấp.
+  exchange-rate:
+    endpoint: ${EXCHANGE_RATE_ENDPOINT:http://localhost:8080/api/v1/soap}
+
   # Job cập nhật chỉ số mạng xã hội.
   crawl:
     enabled: ${CRAWL_ENABLED:true}

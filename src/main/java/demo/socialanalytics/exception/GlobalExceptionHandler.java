@@ -2,6 +2,7 @@ package demo.socialanalytics.exception;
 
 import demo.socialanalytics.dto.response.ErrorResponse;
 import demo.socialanalytics.excel.ExcelParseException;
+import demo.socialanalytics.soap.ExchangeRateUnavailableException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -64,6 +65,15 @@ public class GlobalExceptionHandler {
             }
         }
         return build(HttpStatus.BAD_REQUEST, "Body của request không hợp lệ hoặc không phải JSON đúng định dạng");
+    }
+
+    // Dịch vụ tỷ giá bên ngoài không dùng được -> 503, KHÔNG phải 400 hay 500.
+    // 400 là đổ oan cho người gọi, 500 là nhận lỗi về mình; 503 nói đúng bản chất:
+    // phụ thuộc bên ngoài đang hỏng, thử lại sau.
+    @ExceptionHandler(ExchangeRateUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleExchangeRateUnavailable(
+        ExchangeRateUnavailableException exception) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage());
     }
 
     // File Excel hỏng, sai sheet hoặc thiếu cột bắt buộc -> lỗi của dữ liệu gửi lên, không phải lỗi server.

@@ -40,7 +40,17 @@ public class SecurityConfig {
     private static final String[] PUBLIC_PATHS = {
         "/login", "/error", "/css/**", "/js/**", "/favicon.ico",
         "/oauth2/**", "/login/oauth2/**",
-        "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"
+        "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
+        // Endpoint SOAP để công khai — ĐÂY LÀ MỘT ĐÁNH ĐỔI CÓ CHỦ Ý, không phải sơ suất.
+        //
+        // Client SOAP là máy gọi máy, không có phiên đăng nhập trình duyệt; để sau lớp form
+        // login thì mọi client (kể cả ExchangeRateClient của chính ứng dụng này) chỉ nhận về
+        // trang đăng nhập chứ không gọi được.
+        //
+        // Chấp nhận được vì bề mặt SOAP chỉ lộ SỐ LIỆU GỘP (số bài, số tài khoản theo nền tảng)
+        // và tỷ giá — không có dữ liệu cá nhân, không có nội dung bài viết, không có token.
+        // Triển khai thật thì phải bọc bằng WS-Security hoặc chặn ở tầng mạng.
+        WebServiceConfig.PATH + "/**"
     };
 
     @Bean
@@ -60,6 +70,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                // Bỏ CSRF cho endpoint SOAP: client SOAP gửi POST và không có khái niệm
+                // token CSRF. Xem ghi chú ở PUBLIC_PATHS về mức bảo vệ của bề mặt này.
+                .ignoringRequestMatchers(WebServiceConfig.PATH + "/**")
                 // Bỏ CSRF cho endpoint WebSocket.
                 //
                 // SockJS khi phải lùi về HTTP sẽ dùng POST cho các khung truyền, mà những POST

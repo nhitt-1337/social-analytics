@@ -12,7 +12,7 @@ Xây bằng **Spring Boot 4.1 / Java 21 / MySQL 8.4**.
 
 ## 1. Tình trạng
 
-Giai đoạn hiện tại: **WebSocket + Chart Visualization**.
+**Đã hoàn thành toàn bộ các hạng mục của đề bài.**
 
 | Hạng mục | Trạng thái |
 |---|---|
@@ -27,6 +27,8 @@ Giai đoạn hiện tại: **WebSocket + Chart Visualization**.
 | Unit test Service & Controller, `@DataJpaTest` | ✅ |
 | Background job crawl định kỳ (`@Scheduled` + `@Async`) | ✅ |
 | JMS: queue, listener, retry & DLQ (ActiveMQ) | ✅ |
+| WebService SOAP (Spring-WS): tạo & tiêu thụ | ✅ |
+| Reflection nâng cao: export model bất kỳ | ✅ |
 | Biểu đồ Chart.js | ✅ |
 | WebSocket realtime (STOMP + SockJS) | ✅ |
 
@@ -75,6 +77,16 @@ API (nhận JSON) trả **401**, còn trang HTML bị chuyển hướng về `/l
 | GET | `/statistics` | Thống kê tổng hợp theo nền tảng |
 | GET | `/statistics/dead-letters` | Message đã vào hàng đợi thư chết |
 | GET | `/chart-data?platform=&days=` | Dữ liệu tổng hợp cho biểu đồ (days mặc định 7, tối đa 90) |
+| GET | `/exchange-rate?from=&to=` | Tỷ giá, lấy qua WebService SOAP |
+| GET | `/export/models` | Model nào xuất được, mỗi model có cột gì |
+| GET | `/export/{model}` | Xuất model ra Excel — cột suy ra bằng Reflection |
+
+SOAP (không dùng REST):
+
+| Địa chỉ | Mô tả |
+|---|---|
+| `POST /soap` | `getPlatformSummary`, `getExchangeRate` |
+| `GET /soap/socialAnalytics.wsdl` | WSDL sinh tự động từ XSD |
 
 Trang HTML (Thymeleaf):
 
@@ -521,13 +533,119 @@ cần broker ngoài qua `enableStompBrokerRelay`.
 Chart.js, SockJS và stomp.js tải từ CDN: không có mạng thì biểu đồ không hiện, phần còn lại của
 trang vẫn chạy.
 
-## 9. Kiểm thử
+## 9. SOAP & Reflection nâng cao
+
+### Contract-first: XSD là nguồn sự thật
+
+`src/main/resources/xsd/social-analytics.xsd` là **hợp đồng**; các lớp Java được sinh ra từ nó lúc
+build (`jaxb2-maven-plugin`), không phải chiều ngược lại. Suy XSD ra từ lớp Java thì đổi tên một
+trường trong code là hợp đồng đổi theo mà không ai hay, và mọi client đang chạy sẽ hỏng.
+
+`src/main/resources/xjb/bindings.xjb` bảo XJC sinh `java.time.LocalDateTime` thay vì
+`XMLGregorianCalendar`, để code sinh tự động dùng chung kiểu thời gian với phần còn lại.
+
+WSDL sinh tự động từ chính XSD đó tại `/soap/socialAnalytics.wsdl` — tài liệu không bao giờ lệch
+với thực tế.
+
+### Hai đầu SOAP đều nằm trong ứng dụng
+
+```
+ExchangeRateClient ──HTTP──> POST /soap ──> SocialAnalyticsEndpoint ──> ExchangeRateService
+   (tiêu thụ)                                    (tạo)                    (nhà cung cấp giả lập)
+```
+
+Dịch vụ tỷ giá là **giả lập**, đóng vai nhà cung cấp SOAP bên ngoài, nhờ vậy bản demo end-to-end
+chạy được khi không có mạng. Trỏ sang nhà cung cấp thật bằng `EXCHANGE_RATE_ENDPOINT`, không phải
+sửa code.
+
+### Ba quyết định đáng nói
+
+- **Đặt ở `/soap`, không phải `/ws`.** `/ws` đã là endpoint WebSocket của dashboard;
+  `MessageDispatcherServlet` mà ánh xạ vào `/ws/*` sẽ nuốt luôn request WebSocket và phần realtime
+  chết.
+- **Mã lỗi SOAP đúng ngữ nghĩa.** Mặc định Spring-WS trả `Server` fault cho mọi ngoại lệ. Sai với
+  lỗi do người gọi gây ra (tiền tệ không hỗ trợ): client SOAP đọc mã `Server` là "lỗi tạm thời,
+  cứ thử lại" nên sẽ retry mãi một request không bao giờ đúng được.
+  `SoapFaultMappingExceptionResolver` ánh xạ các lỗi tham số sang `Client` fault.
+- **`/soap/**` để công khai — đánh đổi có chủ ý.** Client SOAP là máy gọi máy, không có phiên
+  đăng nhập trình duyệt; để sau lớp form login thì mọi client (kể cả `ExchangeRateClient` của
+  chính ứng dụng này) chỉ nhận về trang đăng nhập. Chấp nhận được vì bề mặt SOAP chỉ lộ **số liệu
+  gộp** và tỷ giá — không có dữ liệu cá nhân, không có nội dung bài viết, không có token.
+  **Triển khai thật thì phải bọc bằng WS-Security hoặc chặn ở tầng mạng.**
+
+### Reflection nâng cao: xuất model bất kỳ
+
+Dự án có **hai** đường xuất Excel, dùng cho hai mục đích khác nhau:
+
+| | `ExcelMapper` | `ModelExporter` |
+|---|---|---|
+| Cần gì ở model | `@ExcelColumn` trên từng field | Không cần gì |
+| Kiểm soát cột | Tường minh: tên, thứ tự, bắt buộc | Suy ra tự động |
+| Đọc/ghi | Cả hai chiều | Chỉ ghi |
+| Dùng khi | Mình làm chủ lớp, cần kiểm soát chính xác | Lớp không sửa được (thư viện ngoài, sinh từ XSD), hoặc chỉ cần "xuất bảng này ra Excel" |
+
+`ModelExporter` ưu tiên `ExcelMapper` khi model có `@ExcelColumn` — **khai báo tường minh luôn
+thắng suy đoán**.
+
+`ModelIntrospector` suy ra cột bằng Reflection:
+
+- **Ưu tiên gọi method (getter) thay vì đọc thẳng field** — getter mới là phần công khai của lớp,
+  và nhiều lớp tính giá trị trong getter chứ không lưu sẵn. Không có getter thì mới đọc field.
+- **`boolean` dùng `isXxx()`** chứ không phải `getXxx()`.
+- **Thứ tự cột**: `record` theo thứ tự khai báo component; lớp thường theo thứ tự **field**, vì
+  `getMethods()` do Reflection trả về **không có thứ tự ổn định giữa các lần chạy JVM** — xếp theo
+  field thì file xuất ra lần nào cũng như nhau.
+- `camelCase` → `"Camel case"`, khỏi khai tay tiêu đề từng cột.
+- Getter tự ném lỗi (lazy loading ngoài transaction) thì báo rõ **thuộc tính nào** hỏng.
+
+Thêm một model xuất được = thêm **một dòng** vào bảng đăng ký trong `ModelExportService`. Không
+phải viết thêm endpoint, không phải tạo thêm DTO.
+
+## 10. Đóng gói & chạy demo
+
+```bash
+./mvnw clean package                       # chạy toàn bộ test rồi đóng gói
+docker compose up -d                       # MySQL + ActiveMQ
+java -jar target/social-analytics-0.0.1-SNAPSHOT.jar
+```
+
+Kèm Social Login thật:
+
+```bash
+FACEBOOK_CLIENT_ID=... FACEBOOK_CLIENT_SECRET=... \
+  java -jar target/social-analytics-0.0.1-SNAPSHOT.jar
+```
+
+Muốn xem job crawl chạy ngay thay vì đợi 1 giờ:
+
+```bash
+CRAWL_INITIAL_DELAY=PT10S CRAWL_INTERVAL=PT60S \
+  java -jar target/social-analytics-0.0.1-SNAPSHOT.jar
+```
+
+Kiểm nhanh vài thứ không cần đăng nhập:
+
+```bash
+curl http://localhost:8080/api/v1/soap/socialAnalytics.wsdl        # hợp đồng SOAP
+
+curl -X POST -H 'Content-Type: text/xml' --data '<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body>
+<getExchangeRateRequest xmlns="http://demo/socialanalytics/ws">
+<fromCurrency>USD</fromCurrency><toCurrency>VND</toCurrency>
+</getExchangeRateRequest></soap:Body></soap:Envelope>' \
+  http://localhost:8080/api/v1/soap
+```
+
+Các màn hình: `/api/v1/login` → `/api/v1/dashboard` (biểu đồ realtime, nút chạy job, form CSRF);
+Swagger ở `/api/v1/swagger-ui.html`; quản trị ActiveMQ ở `localhost:8161` (admin/admin).
+
+## 11. Kiểm thử
 
 ```bash
 ./mvnw test
 ```
 
-**292 test**, chạy trên H2 và broker ActiveMQ nhúng (`vm://`) ở `MODE=MySQL` — không cần dựng MySQL thật.
+**335 test**, chạy trên H2 và broker ActiveMQ nhúng (`vm://`) ở `MODE=MySQL` — không cần dựng MySQL thật.
 
 | Tầng | Kiểu test | Lớp test |
 |---|---|---|
@@ -542,9 +660,43 @@ trang vẫn chạy.
 | Thống kê | `@DataJpaTest` | `StatisticsServiceTest` (6) |
 | Biểu đồ | `@DataJpaTest` / `@SpringBootTest` | `ChartDataServiceTest` (11), `ChartControllerIntegrationTest` (6) |
 | WebSocket | `@SpringBootTest(RANDOM_PORT)` + STOMP client | `WebSocketBroadcastTest` (4) |
+| SOAP | `MockWebServiceClient` / `MockWebServiceServer` | `SocialAnalyticsEndpointTest` (5), `ExchangeRateClientTest` (4) |
+| SOAP qua HTTP thật | `@SpringBootTest(RANDOM_PORT)` | `SoapOverHttpTest` (4) |
+| Reflection nâng cao | JUnit5 thuần | `ModelExporterTest` (15) |
+| Export generic | `@SpringBootTest` | `ModelExportControllerIntegrationTest` (6) |
+| **Đầu-cuối toàn hệ thống** | `@SpringBootTest` + `MockMvc` | `EndToEndIntegrationTest` (9) |
 | Social Login | Mockito / `@DataJpaTest` | `SocialUserAttributesTest` (12), `SocialLoginUserServiceTest` (8), `JpaOAuth2AuthorizedClientServiceTest` (8) |
 | Job & đa luồng | Mockito | `SocialMetricsCollectorTest` (6), `SocialMetricsUpdateJobTest` (12), `MockSocialApiClientTest` (7) |
 | Job & đa luồng | `@SpringBootTest` | `AsyncConfigTest` (6), `SocialMetricsJobIntegrationTest` (6), `CrawlControllerIntegrationTest` (8) |
+
+### Độ phủ
+
+`./mvnw verify` rồi mở `target/site/jacoco/index.html`.
+
+```
+độ phủ lệnh : 90%
+độ phủ nhánh: 75%
+```
+
+| Gói | Phủ | Ghi chú |
+|---|---|---|
+| `dto.*`, `mapper`, `util` | 100% | |
+| `config` | 97% | |
+| `soap` | 96% | |
+| `service` | 95% | |
+| `controller` | 94% | |
+| `entity` | 91% | |
+| `excel` | 86% | |
+| `messaging` | 82% | |
+| `security` | 78% | Nhánh chưa phủ: luồng OAuth2 cần credential thật |
+| `exception` | 59% | **Thấp nhất** — nhiều nhánh dịch kiểu lỗi chưa được chạm tới |
+
+Lớp JAXB sinh tự động từ XSD bị loại khỏi phép đo: đó là code máy sinh, đo độ phủ của chúng chỉ
+làm loãng con số thật.
+
+**Chỗ còn mỏng, nói thẳng:** `GlobalExceptionHandler` mới 59% — các nhánh `describeType()` cho
+kiểu ngày/boolean và vài handler ít gặp chưa có test riêng. Phần đăng nhập Facebook cũng chỉ được
+kiểm tới bước chuyển hướng; đoạn callback → đổi token → lưu user chưa chạy với app Facebook thật.
 
 Quy ước đã áp dụng:
 
@@ -584,11 +736,91 @@ Quy ước đã áp dụng:
   có WebSocket. Endpoint `/ws` yêu cầu đăng nhập nên test mở riêng bằng một `SecurityFilterChain`
   đặt trước, **chỉ trong test**, để kiểm đúng việc truyền tin; việc endpoint được bảo vệ ở cấu
   hình thật thì `SecurityRulesTest` kiểm.
+- **Mock ở đúng tầng cần mock.** `ExchangeRateClientTest` và `EndToEndIntegrationTest` đều dùng
+  `MockWebServiceServer`, chặn ngay **dưới** tầng HTTP nên không đi qua Spring Security — cả hai
+  vẫn xanh trong khi endpoint `/soap` thật bị chặn ở lớp đăng nhập và mọi client SOAP chỉ nhận về
+  trang login. `SoapOverHttpTest` chạy trên cổng thật để bịt đúng khoảng trống đó.
 - **Cảnh giác khi profile test đặt giá trị khác production.** `spring.activemq.pool.enabled=false`
   trong profile test đã che mất lỗi chỉ xảy ra ở production (thiếu `ConnectionFactory`), và app
   chỉ chết khi chạy thật. Cấu hình nào lệch giữa hai bên thì phải có lý do rõ ràng.
 
-## 10. Thiết kế
+## 12. Tổng kết kiến trúc
+
+### Toàn cảnh
+
+```
+                    Trình duyệt
+                        |
+     ┌──────────────────┼──────────────────┐
+     | HTML (Thymeleaf) | REST JSON        | STOMP/WebSocket
+     v                  v                  v
+  /login /dashboard   /posts /metrics    /topic/chart
+                      /chart-data        /topic/crawl
+                      /export/{model}
+                        |
+     ┌──────────────────┴──────────────────────────────┐
+     |            Spring Security (CSRF, OAuth2)        |
+     └──────────────────┬──────────────────────────────┘
+                        v
+                    Service
+          ┌─────────────┼──────────────┬──────────────┐
+          v             v              v              v
+     Repository   ExcelMapper /    SocialApiClient   SOAP
+      (JPA)       ModelExporter     (crawl)       (Spring-WS)
+          |                              ^              ^
+          v                              |              |
+       MySQL                       @Scheduled +     /soap
+                                     @Async        (tạo & tiêu thụ)
+          ^
+          |  listener
+     ActiveMQ (import.completed, ActiveMQ.DLQ)
+```
+
+### Một luồng dữ liệu đi qua gần hết hệ thống
+
+```
+1. Người dùng đăng nhập Facebook          -> OAuth2, token lưu vào oauth2_authorized_clients
+2. Upload Excel                            -> ExcelMapper đọc bằng Reflection, lưu posts
+3. Import xong (SAU khi commit)            -> message IMPORT_COMPLETED lên ActiveMQ
+4. Listener nhận                           -> tính lại platform_summaries
+5. Job @Scheduled mỗi 1 giờ                -> @Async crawl song song theo tài khoản, ghi social_metrics
+6. Crawl/import xong                       -> đẩy /topic/chart qua WebSocket
+7. Trình duyệt nhận                        -> Chart.js vẽ lại, không tải lại trang
+8. Xuất báo cáo                            -> ExcelMapper (@ExcelColumn) hoặc ModelExporter (Reflection)
+9. Hệ thống khác hỏi số liệu               -> SOAP /soap, hợp đồng XSD
+```
+
+`EndToEndIntegrationTest` chạy đúng chuỗi này trong 9 bước.
+
+### Nguyên tắc lặp lại xuyên suốt
+
+- **Việc chậm thì đẩy ra khỏi request.** Crawl vào thread pool riêng, tính thống kê vào hàng đợi.
+  Người dùng nhận phản hồi ngay khi dữ liệu đã an toàn.
+- **Chỉ gửi tin sau khi commit.** Cả JMS lẫn WebSocket. Gửi trong transaction thì bên nhận đọc
+  được trạng thái chưa tồn tại.
+- **Lỗi của việc phụ không được làm hỏng việc chính.** Phát tin realtime hỏng thì job crawl vẫn
+  thành công; một bài crawl lỗi thì tài khoản đó vẫn chạy tiếp; một dòng Excel sai thì các dòng
+  còn lại vẫn nhập được.
+- **Tính lại từ đầu thay vì cộng dồn.** `platform_summaries` dựng lại từ `posts`, nên xử lý một
+  message hai lần vẫn ra đúng một kết quả — điều bắt buộc vì JMS chỉ bảo đảm "ít nhất một lần".
+- **Khai báo tường minh thắng suy đoán.** Có `@ExcelColumn` thì dùng nó; không có mới để
+  Reflection tự suy.
+- **Nói đúng bản chất lỗi.** 401 khác 403 khác 503; SOAP `Client` fault khác `Server` fault. Sai
+  mã lỗi là bên gọi xử lý sai — retry vô ích hoặc bỏ cuộc sớm.
+
+### Những chỗ còn thiếu, liệt kê thẳng
+
+| Hạng mục | Trạng thái |
+|---|---|
+| Đăng nhập Facebook thật | Xác minh tới bước chuyển hướng; callback → đổi token chưa chạy với app thật |
+| Biểu đồ trên trình duyệt | Server phát đúng, client STOMP trong test nhận đúng; chưa xem tận mắt Chart.js vẽ |
+| Chạy nhiều instance | Job crawl sẽ crawl trùng (cờ chặn nằm trong bộ nhớ); WebSocket broker in-memory không chia sẻ giữa các instance |
+| Quản lý schema | `ddl-auto: update` — đã phải sửa tay một lần (`users.email`); nên chuyển sang Flyway |
+| Bảo mật `/soap` | Đang công khai có chủ ý; production cần WS-Security hoặc chặn ở tầng mạng |
+| `SocialApiClient` | Vẫn là dữ liệu giả; nối API thật chỉ cần thêm một implementation đọc token đã lưu |
+| Độ phủ `exception` | 59%, thấp nhất trong các gói |
+
+### Phân lớp
 
 **Phân lớp:** `Controller` (mỏng, chỉ `@Valid` + delegate, không truy vấn DB) → `Service`
 (nghiệp vụ, `@Transactional`) → `Repository` (Spring Data JPA) → `DTO` (record + Bean Validation)

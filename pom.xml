@@ -66,6 +66,17 @@
 			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
 		</dependency>
 
+		<!-- Spring-WS: tạo endpoint SOAP và tiêu thụ SOAP từ bên ngoài. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web-services</artifactId>
+		</dependency>
+		<!-- WSDL sinh tự động từ XSD lúc chạy cần thư viện này. -->
+		<dependency>
+			<groupId>wsdl4j</groupId>
+			<artifactId>wsdl4j</artifactId>
+		</dependency>
+
 		<!-- WebSocket + STOMP: đẩy dữ liệu mới xuống dashboard theo thời gian thực. -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -112,6 +123,13 @@
 			<artifactId>h2</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- MockWebServiceServer: giả lập cả hai đầu SOAP trong test, không cần mở cổng mạng. -->
+		<dependency>
+			<groupId>org.springframework.ws</groupId>
+			<artifactId>spring-ws-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- Broker ActiveMQ nhúng (vm://) cho test: chạy trong cùng JVM nên bộ test không
 		     cần dựng broker thật bằng Docker. -->
 		<dependency>
@@ -145,6 +163,63 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<!-- Đo độ phủ test. Chạy `./mvnw verify` rồi mở target/site/jacoco/index.html.
+			     Loại trừ lớp JAXB sinh tự động từ XSD: chúng là code máy sinh, đo độ phủ
+			     của chúng chỉ làm loãng con số thật. -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.13</version>
+				<configuration>
+					<excludes>
+						<exclude>demo/socialanalytics/ws/**</exclude>
+						<exclude>org/w3/**</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Contract-first: sinh lớp JAXB TỪ XSD lúc build.
+			     Viết tay lớp Java rồi suy ra XSD thì hợp đồng dịch vụ đổi lúc nào không hay;
+			     ở đây XSD là nguồn sự thật, sửa XSD là lớp Java sinh lại theo. -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>jaxb2-maven-plugin</artifactId>
+				<version>3.2.0</version>
+				<executions>
+					<execution>
+						<id>xjc</id>
+						<goals>
+							<goal>xjc</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<sources>
+						<source>${project.basedir}/src/main/resources/xsd</source>
+					</sources>
+					<xjbSources>
+						<xjbSource>${project.basedir}/src/main/resources/xjb/bindings.xjb</xjbSource>
+					</xjbSources>
+					<outputDirectory>${project.build.directory}/generated-sources/jaxb</outputDirectory>
+					<clearOutputDir>false</clearOutputDir>
+				</configuration>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
