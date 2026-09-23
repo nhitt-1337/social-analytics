@@ -4,7 +4,6 @@ import demo.socialanalytics.entity.AuthProvider;
 
 import java.util.Map;
 
-// Thông tin người dùng đã được chuẩn hoá về một khuôn chung cho mọi nhà cung cấp.
 public record SocialUserAttributes(
     AuthProvider provider,
     String providerId,
@@ -12,8 +11,6 @@ public record SocialUserAttributes(
     String email,
     String avatarUrl
 ) {
-
-    // Facebook: /me?fields=id,name,email,picture.type(large) trả về { "id"
     static SocialUserAttributes fromFacebook(Map<String, Object> attributes) {
         return new SocialUserAttributes(
             AuthProvider.FACEBOOK,
@@ -23,7 +20,6 @@ public record SocialUserAttributes(
             facebookPicture(attributes));
     }
 
-    // Phải xin picture trong user-info; tự ghép URL sẽ ra ảnh mặc định xám
     @SuppressWarnings("unchecked")
     private static String facebookPicture(Map<String, Object> attributes) {
         if (!(attributes.get("picture") instanceof Map<?, ?> picture)) {
@@ -39,7 +35,6 @@ public record SocialUserAttributes(
         return text(fields.get("url"));
     }
 
-    // X (Twitter): /2/users/me trả LỒNG một lớp { "data": { "id", "name", "username" } }.
     @SuppressWarnings("unchecked")
     static SocialUserAttributes fromX(Map<String, Object> attributes) {
         Map<String, Object> data = attributes.get("data") instanceof Map<?, ?> nested
@@ -65,7 +60,6 @@ public record SocialUserAttributes(
         };
     }
 
-    // Tên định danh duy nhất của phiên đăng nhập, vd "facebook:123456".
     public String principalName() {
         return provider.getSlug() + ":" + providerId;
     }

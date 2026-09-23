@@ -25,7 +25,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DataJpaTest
 @ActiveProfiles("test")
 class PostRepositoryTest {
-
     @Autowired PostRepository postRepository;
     @Autowired TestEntityManager entityManager;
 
@@ -54,8 +53,6 @@ class PostRepositoryTest {
         return entityManager.persist(post);
     }
 
-    // ----- unique constraint (platform, external_id) -----
-
     @Test
     void chanLuuTrungCapPlatformVaExternalId() {
         post(Platform.FACEBOOK, "fb-001", null);
@@ -82,8 +79,6 @@ class PostRepositoryTest {
         assertThat(postRepository.existsByPlatformAndExternalId(Platform.TWITTER, "post-1")).isTrue();
     }
 
-    // ----- findIdentitiesByExternalIdIn: constructor expression dùng cho import -----
-
     @Test
     void traVeCapDinhDanhCuaCacBaiDaTonTai() {
         post(Platform.FACEBOOK, "fb-001", null);
@@ -106,13 +101,10 @@ class PostRepositoryTest {
         assertThat(postRepository.findIdentitiesByExternalIdIn(Set.of("khac-han"))).isEmpty();
     }
 
-    // ----- findForReport: các tham số lọc đều cho phép null -----
-
     @Test
     void boQuaMoiBoLocKhiTatCaThamSoLaNull() {
         post(Platform.FACEBOOK, "fb-001", LocalDateTime.of(2026, 1, 15, 8, 0));
         post(Platform.TWITTER, "tw-001", LocalDateTime.of(2026, 2, 15, 8, 0));
-        // Bài không có postedAt vẫn phải xuất hiện khi không lọc thời gian.
         post(Platform.FACEBOOK, "fb-002", null);
         entityManager.flush();
 
@@ -150,7 +142,6 @@ class PostRepositoryTest {
         assertThat(result).extracting(Post::getExternalId).containsExactly("thang-2");
     }
 
-    // Đã ghi trong tài liệu API: lọc thời gian thì bài chưa có postedAt sẽ không xuất hiện.
     @Test
     void baiThieuPostedAtBiLoaiKhiCoBoLocThoiGian() {
         post(Platform.FACEBOOK, "co-ngay", LocalDateTime.of(2026, 2, 15, 8, 0));
@@ -185,7 +176,6 @@ class PostRepositoryTest {
         assertThat(postRepository.findForReport(null, null, null, PageRequest.ofSize(2))).hasSize(2);
     }
 
-    // join fetch p.user trong findForReport: user phải đã được nạp sẵn, không lazy-load thêm.
     @Test
     void napSanNguoiQuanLyTrongCungTruyVan() {
         post(Platform.FACEBOOK, "fb-001", LocalDateTime.of(2026, 1, 1, 8, 0));

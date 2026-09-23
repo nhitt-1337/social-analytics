@@ -21,22 +21,18 @@ import org.springframework.xml.xsd.XsdSchema;
 @EnableWs
 @EnableConfigurationProperties(ExchangeRateProperties.class)
 public class WebServiceConfig {
-
     public static final String PATH = "/soap";
     public static final String NAMESPACE = "http://demo/socialanalytics/ws";
 
     @Bean
     public ServletRegistrationBean<MessageDispatcherServlet> messageDispatcherServlet(
         ApplicationContext applicationContext) {
-
         MessageDispatcherServlet servlet = new MessageDispatcherServlet();
         servlet.setApplicationContext(applicationContext);
-        // Cho servlet tự phục vụ WSDL tại /soap/<tên>.wsdl
         servlet.setTransformWsdlLocations(true);
         return new ServletRegistrationBean<>(servlet, PATH + "/*");
     }
 
-    // WSDL sinh tự động từ chính XSD đang dùng, nên tài liệu không bao giờ lệch với thực tế.
     @Bean(name = "socialAnalytics")
     public DefaultWsdl11Definition wsdlDefinition(XsdSchema socialAnalyticsSchema) {
         DefaultWsdl11Definition definition = new DefaultWsdl11Definition();
@@ -72,12 +68,10 @@ public class WebServiceConfig {
         serverFault.setFaultCode(SoapFaultDefinition.SERVER);
         resolver.setDefaultFault(serverFault);
 
-        // Chạy trước bộ xử lý mặc định.
         resolver.setOrder(1);
         return resolver;
     }
 
-    // Marshaller dùng chung cho cả phía tạo và phía tiêu thụ SOAP.
     @Bean
     public Jaxb2Marshaller jaxb2Marshaller() {
         Jaxb2Marshaller marshaller = new Jaxb2Marshaller();

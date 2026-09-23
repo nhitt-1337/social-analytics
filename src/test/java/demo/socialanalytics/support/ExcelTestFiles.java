@@ -8,16 +8,13 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// Dựng file .xlsx trong bộ nhớ cho test import, và đọc lại file xuất ra để kiểm tra.
 public final class ExcelTestFiles {
-
     public static final List<String> POST_HEADERS =
         List.of("platform", "externalId", "content", "url", "postedAt");
 
     private ExcelTestFiles() {
     }
 
-    // rows: mỗi phần tử là một dòng, giá trị null -> ô trống.
     public static byte[] postsFile(List<List<Object>> rows) {
         return file(POST_HEADERS, rows);
     }
@@ -55,7 +52,6 @@ public final class ExcelTestFiles {
         }
     }
 
-    // Đọc toàn bộ sheet đầu tiên về dạng chuỗi để test so khớp cho dễ.
     public static List<List<String>> readAll(byte[] bytes) {
         try (Workbook book = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
             Sheet sheet = book.getSheetAt(0);

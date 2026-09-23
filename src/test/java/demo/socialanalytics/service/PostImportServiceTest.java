@@ -37,10 +37,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.*;
 
-// Unit test cho luồng import.
 @ExtendWith(MockitoExtension.class)
 class PostImportServiceTest {
-
     @Mock PostRepository postRepository;
     @Mock UserRepository userRepository;
     @Mock ApplicationEventPublisher eventPublisher;
@@ -101,7 +99,6 @@ class PostImportServiceTest {
         assertThat(saved.get(0).getPostedAt()).isEqualTo(postedAt);
     }
 
-    // Bài đã có trong DB thì bỏ qua, KHÔNG làm hỏng cả lần import.
     @Test
     void boQuaBaiDaCoTrongDatabase() {
         ownerExists();
@@ -122,7 +119,6 @@ class PostImportServiceTest {
         assertThat(capturedSaved()).extracting(Post::getExternalId).containsExactly("fb-002");
     }
 
-    // Cùng một bài xuất hiện hai lần TRONG CHÍNH FILE cũng phải bị chặn, nếu không saveAll sẽ đụng
     @Test
     void boQuaDongTrungLapBenTrongCungMotFile() {
         ownerExists();
@@ -138,7 +134,6 @@ class PostImportServiceTest {
         assertThat(capturedSaved()).hasSize(1);
     }
 
-    // Cùng externalId nhưng khác nền tảng là HAI bài khác nhau -> đều được nhận.
     @Test
     void cungExternalIdKhacNenTangThiKhongCoiLaTrung() {
         ownerExists();
@@ -153,7 +148,6 @@ class PostImportServiceTest {
         assertThat(capturedSaved()).hasSize(2);
     }
 
-    // Dòng sai định dạng bị loại nhưng các dòng còn lại vẫn vào DB.
     @Test
     void dongSaiDinhDangBiLoaiNhungDongConLaiVanDuocLuu() {
         ownerExists();
@@ -173,7 +167,6 @@ class PostImportServiceTest {
         assertThat(capturedSaved()).extracting(Post::getExternalId).containsExactly("fb-001");
     }
 
-    // Dòng trùng nằm SAU một dòng lỗi phải được báo đúng số dòng trong file.
     @Test
     void dungSoDongKhiCoDongLoi() {
         ownerExists();
@@ -212,7 +205,6 @@ class PostImportServiceTest {
         ArgumentCaptor<Collection<String>> captor = ArgumentCaptor.forClass(Collection.class);
         verify(postRepository, times(1)).findIdentitiesByExternalIdIn(captor.capture());
         assertThat(captor.getValue()).containsExactlyInAnyOrder("fb-001", "fb-002", "fb-003");
-        // Không được rơi về kiểu hỏi từng dòng.
         verify(postRepository, never()).existsByPlatformAndExternalId(any(), any());
         verify(postRepository, times(1)).saveAll(any());
     }
@@ -255,7 +247,6 @@ class PostImportServiceTest {
         verifyNoInteractions(postRepository);
     }
 
-    // Phát sự kiện với ĐÚNG số liệu tóm tắt; ImportCompletedProducer mới là nơi đẩy lên hàng đợi.
     @Test
     void phatSuKienImportCompleted() {
         ownerExists();
@@ -276,7 +267,6 @@ class PostImportServiceTest {
         assertThat(message.completedAt()).isNotNull();
     }
 
-    // Import hỏng ở giữa chừng thì KHÔNG được báo "import xong".
     @Test
     void khongPhatSuKienKhiFileBiTuChoi() {
         ownerExists();
@@ -313,7 +303,6 @@ class PostImportServiceTest {
         verifyNoInteractions(userRepository, postRepository, eventPublisher);
     }
 
-    // Đuôi .xlsx nhưng nội dung không phải workbook.
     @Test
     void tuChoiFileDungDuoiNhungNoiDungKhongPhaiExcel() {
         ownerExists();

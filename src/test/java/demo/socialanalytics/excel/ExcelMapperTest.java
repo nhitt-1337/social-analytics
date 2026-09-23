@@ -15,14 +15,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Test cho engine đọc/ghi Excel bằng Reflection. Không đụng Spring, không đụng DB.
 class ExcelMapperTest {
-
     private final ExcelMapper mapper = new ExcelMapper();
 
-    // ----- Class dùng làm "vật thí nghiệm" -----
-
-    // Field khai lộn xộn so với order, để kiểm ExcelMapper sắp theo order
     static class SampleRow {
         @ExcelColumn(header = "Ngày đo", order = 3)
         private LocalDateTime measuredAt;
@@ -39,8 +34,6 @@ class ExcelMapperTest {
     static class NoColumnRow {
         private String name;
     }
-
-    // ----- Helper dựng file Excel trong bộ nhớ -----
 
     private byte[] workbook(List<String> headers, List<List<Object>> rows) {
         try (XSSFWorkbook book = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -83,7 +76,6 @@ class ExcelMapperTest {
     @Nested
     @DisplayName("describe() — quét annotation bằng Reflection")
     class Describe {
-
         @Test
         void sapCotTheoOrderVaBoQuaFieldKhongCoAnnotation() {
             List<ExcelField> fields = mapper.describe(SampleRow.class);
@@ -101,7 +93,6 @@ class ExcelMapperTest {
                 .containsExactly("Nền tảng");
         }
 
-        // Quét bằng Reflection tốn kém nên kết quả được cache; gọi lại phải trả đúng cùng một list.
         @Test
         void dungLaiKetQuaDaQuetOLanGoiSau() {
             assertThat(mapper.describe(SampleRow.class)).isSameAs(mapper.describe(SampleRow.class));
@@ -118,7 +109,6 @@ class ExcelMapperTest {
     @Nested
     @DisplayName("read() — đọc file vào đối tượng")
     class Read {
-
         @Test
         void docDuocCacKieuDuLieuKhacNhau() {
             LocalDateTime measuredAt = LocalDateTime.of(2026, 3, 1, 9, 30, 0);
@@ -136,7 +126,6 @@ class ExcelMapperTest {
             });
         }
 
-        // Cột được tìm theo TÊN nên người dùng đảo cột hoặc gõ khác hoa thường vẫn đọc đúng.
         @Test
         void khopCotTheoTenKhongPhuThuocThuTuVaHoaThuong() {
             byte[] file = workbook(
@@ -166,7 +155,6 @@ class ExcelMapperTest {
             assertThat(result.errors()).isEmpty();
         }
 
-        // Một dòng hỏng chỉ làm hỏng dòng đó; các dòng còn lại vẫn đọc được.
         @Test
         void dongSaiDinhDangKhongLamHongCaFile() {
             byte[] file = workbook(
@@ -180,7 +168,6 @@ class ExcelMapperTest {
 
             assertThat(result.rows()).hasSize(1);
             assertThat(result.totalRows()).isEqualTo(3);
-            // Dòng 1 là tiêu đề nên dòng dữ liệu thứ hai hiển thị là dòng 3.
             assertThat(result.errors()).extracting(ExcelRowError::rowNumber).containsExactly(3, 4);
             assertThat(result.errors().get(0).message()).contains("instagram").contains("Cho phép");
             assertThat(result.errors().get(1).message()).contains("phải là số nguyên");
@@ -199,7 +186,6 @@ class ExcelMapperTest {
                 .satisfies(error -> assertThat(error.message()).contains("Nền tảng"));
         }
 
-        // Thiếu hẳn cột bắt buộc là lỗi CẢ FILE -> dừng ngay, khác với lỗi từng dòng.
         @Test
         void némExcelParseExceptionKhiThieuCotBatBuoc() {
             byte[] file = workbook(List.of("Lượt thích"), List.of(List.of(1)));
@@ -209,7 +195,6 @@ class ExcelMapperTest {
                 .hasMessageContaining("Nền tảng");
         }
 
-        // Cột không bắt buộc mà file không có thì bỏ qua, không phải lỗi.
         @Test
         void chapNhanFileThieuCotKhongBatBuoc() {
             byte[] file = workbook(List.of("Nền tảng"), List.of(List.of("facebook")));
@@ -221,7 +206,6 @@ class ExcelMapperTest {
                 .satisfies(row -> assertThat(row.likes).isNull());
         }
 
-        // Mỗi dòng hợp lệ phải mang theo SỐ DÒNG GỐC
         @Test
         void moiDongHopLeMangTheoSoDongGocTrongFile() {
             byte[] file = workbook(
@@ -233,7 +217,6 @@ class ExcelMapperTest {
 
             ExcelReadResult<SampleRow> result = read(file);
 
-            // Dòng 2 và dòng 4 của file là hợp lệ; dòng 3 lỗi và bị loại.
             assertThat(result.rows()).extracting(ExcelRow::rowNumber).containsExactly(2, 4);
             assertThat(result.rows()).extracting(row -> row.value().likes).containsExactly(10, 30);
         }
@@ -251,7 +234,6 @@ class ExcelMapperTest {
     @Nested
     @DisplayName("write() — ghi đối tượng ra file")
     class Write {
-
         @Test
         void ghiDongTieuDe() throws Exception {
             byte[] file = mapper.write(List.of(), SampleRow.class, "Bao cao");
@@ -265,7 +247,6 @@ class ExcelMapperTest {
             }
         }
 
-        // record dùng được cho chiều GHI vì ExcelMapper chỉ đọc field, không set.
         @Test
         void ghiDuocCaRecord() throws Exception {
             var rows = List.of(new SimpleReport(1L, "facebook", 10));
@@ -301,7 +282,6 @@ class ExcelMapperTest {
     ) {
     }
 
-    // Ghi ra rồi đọc lại phải ra đúng dữ liệu ban đầu — phép thử chắc chắn nhất cho cặp read/write.
     @Test
     void ghiRaRoiDocLaiDuocDungDuLieu() {
         SampleRow original = new SampleRow();

@@ -34,13 +34,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Chuỗi STOMP thật: client nối vào server đang chạy, đăng ký chủ đề, server phát và client nhận.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Import(WebSocketBroadcastTest.OpenWebSocketForTest.class)
 class WebSocketBroadcastTest {
-
-    // Endpoint /ws yêu cầu đăng nhập; client STOMP ở đây không có phiên nên sẽ bị chặn.
     @TestConfiguration
     static class OpenWebSocketForTest {
         @Bean
@@ -59,7 +56,6 @@ class WebSocketBroadcastTest {
     private StompSession connect() throws Exception {
         WebSocketStompClient client = new WebSocketStompClient(new StandardWebSocketClient());
         client.setMessageConverter(new JacksonJsonMessageConverter());
-        // SockJS bật nên endpoint WebSocket thuần nằm ở .../ws/websocket
         String url = "ws://localhost:" + port + "/api/v1" + WebSocketConfig.ENDPOINT + "/websocket";
         return client.connectAsync(url, new StompSessionHandlerAdapter() {
         }).get(10, TimeUnit.SECONDS);
@@ -94,7 +90,6 @@ class WebSocketBroadcastTest {
         StompSession session = connect();
         BlockingQueue<ChartDataResponse> received =
             subscribe(session, WebSocketConfig.TOPIC_CHART, ChartDataResponse.class);
-        // Chờ một nhịp cho việc đăng ký kịp hoàn tất trước khi server phát.
         Thread.sleep(300);
 
         broadcaster.chartUpdated(sampleChartData());
@@ -124,7 +119,6 @@ class WebSocketBroadcastTest {
         session.disconnect();
     }
 
-    // Đăng ký chủ đề nào chỉ nhận chủ đề đó, WebSocket trần không làm được
     @Test
     void chiNhanDuocChuDeDaDangKy() throws Exception {
         StompSession session = connect();
@@ -134,12 +128,10 @@ class WebSocketBroadcastTest {
 
         broadcaster.chartUpdated(sampleChartData());
 
-        // Phát lên /topic/chart thì bên đăng ký /topic/crawl không được nhận gì.
         assertThat(crawlMessages.poll(2, TimeUnit.SECONDS)).isNull();
         session.disconnect();
     }
 
-    // Không có ai đăng ký thì phát tin vẫn không được ném lỗi.
     @Test
     void khongAiDangKyVanKhongLoi() {
         broadcaster.chartUpdated(sampleChartData());

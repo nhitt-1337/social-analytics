@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.Map;
 
-// Khuôn lỗi thống nhất cho toàn API: { "error": { "code", "message", "fields"? } }.
 public record ErrorResponse(ErrorBody error) {
-
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ErrorBody(String code, String message, Map<String, String> fields) {
     }

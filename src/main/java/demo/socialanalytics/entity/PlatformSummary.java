@@ -6,7 +6,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Thống kê tổng hợp theo nền tảng, tính sẵn để dashboard khỏi phải COUNT lại mỗi lần mở.
 @Getter
 @Entity
 @Table(
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
     uniqueConstraints = @UniqueConstraint(name = "uq_platform_summary", columnNames = "platform")
 )
 public class PlatformSummary {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,7 +26,6 @@ public class PlatformSummary {
     @Setter
     private long postCount;
 
-    // Số tài khoản đang có bài trên nền tảng này.
     @Column(name = "account_count", nullable = false)
     @Setter
     private long accountCount;

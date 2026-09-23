@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MockSocialApiClientTest {
-
     private User owner;
 
     @BeforeEach
@@ -44,7 +43,6 @@ class MockSocialApiClientTest {
         assertThat(snapshot.followers()).isNotNegative();
     }
 
-    // Số liệu bám theo id bài viết nên gọi lại vẫn ra kết quả tương đương — có vậy biểu đồ tăng
     @Test
     void cungMotBaiThiKetQuaOnDinhQuaCacLanGoi() {
         MockSocialApiClient client = client(0, 0);
@@ -68,7 +66,6 @@ class MockSocialApiClientTest {
         assertThat(second.likes()).isNotEqualTo(first.likes());
     }
 
-    // Bài đăng lâu hơn thì tương tác nhiều hơn.
     @Test
     void baiDangCangLauSoLieuCangCao() {
         MockSocialApiClient client = client(0, 0);
@@ -98,7 +95,6 @@ class MockSocialApiClientTest {
         }
     }
 
-    // Bài chưa có postedAt thì lấy createdAt làm mốc, không được ném NullPointerException.
     @Test
     void baiChuaCoPostedAtVanTinhDuoc() {
         Post post = TestEntities.post(1L, owner, Platform.FACEBOOK, "fb-1");

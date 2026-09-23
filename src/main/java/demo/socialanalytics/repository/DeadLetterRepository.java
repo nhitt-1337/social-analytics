@@ -8,7 +8,6 @@ import java.util.List;
 
 @Repository
 public interface DeadLetterRepository extends JpaRepository<DeadLetter, Long> {
-
     List<DeadLetter> findTop20ByOrderByReceivedAtDescIdDesc();
 
     long countBySourceQueue(String sourceQueue);

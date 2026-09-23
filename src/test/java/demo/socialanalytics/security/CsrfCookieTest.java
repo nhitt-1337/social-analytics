@@ -20,10 +20,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @WithMockUser
 class CsrfCookieTest {
-
     @Autowired MockMvc mvc;
 
-    // Chạy trên cổng thật để đi qua chuỗi filter của Spring Security
     @Test
     void traVeCookieXsrfToken() throws Exception {
         var result = mvc.perform(get("/api/v1/dashboard")
@@ -35,7 +33,6 @@ class CsrfCookieTest {
 
         assertThat(cookie).isNotNull();
         assertThat(cookie.getValue()).isNotBlank();
-        // Không HttpOnly thì JavaScript mới đọc được để gọi API bằng fetch.
         assertThat(cookie.isHttpOnly()).isFalse();
     }
 }

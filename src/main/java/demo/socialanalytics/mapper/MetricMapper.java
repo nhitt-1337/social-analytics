@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MetricMapper {
-
     public MetricResponse toResponse(SocialMetric metric) {
         return new MetricResponse(
             metric.getId(),

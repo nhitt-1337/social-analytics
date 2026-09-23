@@ -31,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.ws.test.client.RequestMatchers.anything;
 import static org.springframework.ws.test.client.ResponseCreators.withPayload;
 
-// Chạy tuần tự thì test treo ở đây, không phải 'may thì xanh'
 @SpringBootTest(properties = {
     "social.crawl.enabled=true",
     "social.crawl.initial-delay=PT24H",
@@ -44,7 +43,6 @@ import static org.springframework.ws.test.client.ResponseCreators.withPayload;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class EndToEndIntegrationTest {
-
     private static final String NS = "http://demo/socialanalytics/ws";
 
     @Autowired MockMvc mvc;
@@ -74,8 +72,6 @@ class EndToEndIntegrationTest {
         adminId = users.save(admin).getId();
     }
 
-    // ----- Bước 1: import Excel -----
-
     @Test
     @Order(1)
     void buoc1_importExcelLuuBaiViet() throws Exception {
@@ -98,8 +94,6 @@ class EndToEndIntegrationTest {
         assertThat(posts.findAll()).hasSize(3);
     }
 
-    // ----- Bước 2: JMS -> thống kê tổng hợp (bất đồng bộ) -----
-
     @Test
     @Order(2)
     void buoc2_messageJmsCapNhatThongKe() {
@@ -111,8 +105,6 @@ class EndToEndIntegrationTest {
         });
     }
 
-    // ----- Bước 3: job crawl đa luồng ghi chỉ số -----
-
     @Test
     @Order(3)
     void buoc3_jobCrawlGhiChiSoChoTungBai() {
@@ -122,8 +114,6 @@ class EndToEndIntegrationTest {
         assertThat(run.getTotalPosts()).isEqualTo(3);
         assertThat(metrics.findAll()).hasSize(3);
     }
-
-    // ----- Bước 4: dữ liệu biểu đồ -----
 
     @Test
     @Order(4)
@@ -135,8 +125,6 @@ class EndToEndIntegrationTest {
             .andExpect(jsonPath("$.likes[0]").value(org.hamcrest.Matchers.greaterThan(0)))
             .andExpect(jsonPath("$.platforms.length()").value(Platform.values().length));
     }
-
-    // ----- Bước 5: SOAP đọc được chính thống kê vừa tính -----
 
     @Test
     @Order(5)
@@ -164,8 +152,6 @@ class EndToEndIntegrationTest {
         return context;
     }
 
-    // ----- Bước 6: tiêu thụ SOAP bên ngoài -----
-
     @Test
     @Order(6)
     void buoc6_goiWebServiceTyGiaBenNgoai() throws Exception {
@@ -188,8 +174,6 @@ class EndToEndIntegrationTest {
         server.verify();
     }
 
-    // ----- Bước 7: xuất Excel bằng Reflection -----
-
     @Test
     @Order(7)
     void buoc7_xuatModelRaExcelBangReflection() throws Exception {
@@ -201,15 +185,12 @@ class EndToEndIntegrationTest {
             .andReturn();
 
         var sheet = ExcelTestFiles.readAll(result.getResponse().getContentAsByteArray());
-        // Cột suy ra từ chính lớp model, không có @ExcelColumn nào.
         assertThat(sheet.get(0)).containsExactly(
             "Id", "Platform", "External id", "Content", "Url", "Posted at", "Created at");
         assertThat(sheet).hasSize(4);
         assertThat(sheet.stream().skip(1).map(row -> row.get(2)).toList())
             .containsExactlyInAnyOrder("e2e-fb-1", "e2e-fb-2", "e2e-tw-1");
     }
-
-    // ----- Bước 8: xuất báo cáo có sẵn (đường @ExcelColumn) -----
 
     @Test
     @Order(8)
@@ -222,11 +203,8 @@ class EndToEndIntegrationTest {
         var sheet = ExcelTestFiles.readAll(result.getResponse().getContentAsByteArray());
         assertThat(sheet.get(0)).first().isEqualTo("ID");
         assertThat(sheet).hasSize(4);
-        // Job crawl ở bước 3 đã ghi chỉ số -> cột "Lượt thích" phải có số.
         assertThat(sheet.get(1).get(8)).isNotEmpty();
     }
-
-    // ----- Bước 9: trạng thái tổng thể -----
 
     @Test
     @Order(9)
@@ -241,7 +219,6 @@ class EndToEndIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.length()").value(Platform.values().length));
 
-        // Không có message nào rơi vào hàng đợi thư chết trong cả phiên.
         mvc.perform(get("/api/v1/statistics/dead-letters")
                 .contextPath("/api/v1").servletPath("/statistics/dead-letters")
                 .accept(MediaType.APPLICATION_JSON))

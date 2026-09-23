@@ -19,11 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static java.time.Duration.ofSeconds;
 
-// Toàn bộ chuỗi: import Excel -> phát message -> listener nhận -> tính lại thống kê
 @SpringBootTest
 @ActiveProfiles("test")
 class ImportMessagingIntegrationTest {
-
     @Autowired PostImportService importService;
     @Autowired StatisticsService statisticsService;
     @Autowired UserRepository users;
@@ -60,7 +58,6 @@ class ImportMessagingIntegrationTest {
             List.of("facebook", "fb-2", "Bài 2", "", ""),
             List.of("twitter", "tw-1", "Bài 3", "", ""))), admin.getId());
 
-        // Listener chạy trên luồng khác nên phải CHỜ, không khẳng định ngay được.
         await().atMost(ofSeconds(10)).untilAsserted(() -> {
             var current = statisticsService.current();
             assertThat(current).hasSize(Platform.values().length);
@@ -76,7 +73,6 @@ class ImportMessagingIntegrationTest {
         });
     }
 
-    // Đây là phép kiểm cho @TransactionalEventListener(AFTER_COMMIT).
     @Test
     void chiGuiSauKhiCommit() {
         importService.importPosts(upload(List.of(
@@ -89,7 +85,6 @@ class ImportMessagingIntegrationTest {
                 .satisfies(s -> assertThat(s.getPostCount()).isEqualTo(2)));
     }
 
-    // Nền tảng không còn bài nào phải về 0, không được giữ con số cũ.
     @Test
     void nenTangKhongConBaiNaoThiVeKhong() {
         importService.importPosts(upload(List.of(
@@ -120,7 +115,6 @@ class ImportMessagingIntegrationTest {
 
         assertThat(summaries.findByPlatform(Platform.FACEBOOK))
             .get().satisfies(s -> assertThat(s.getPostCount()).isEqualTo(1));
-        // Vẫn đúng một dòng cho mỗi nền tảng, không sinh thêm bản ghi trùng.
         assertThat(summaries.findAll()).hasSize(Platform.values().length);
     }
 }

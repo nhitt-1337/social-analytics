@@ -26,10 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-// Giả lập sẵn người dùng thay vì đi qua luồng OAuth2 thật
 @WithMockUser
 class MetricControllerIntegrationTest {
-
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired PostRepository posts;
@@ -79,11 +77,9 @@ class MetricControllerIntegrationTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.postId").value(post.getId()))
             .andExpect(jsonPath("$.likes").value(100))
-            // Không gửi collectedAt -> entity tự điền thời điểm hiện tại.
             .andExpect(jsonPath("$.collectedAt").isNotEmpty());
     }
 
-    // Số liệu mới nhất phải xuất hiện ngay trên response của bài viết.
     @Test
     void latestMetricShowsUpOnPostDetail() throws Exception {
         saveMetric(10, LocalDateTime.now().minusDays(2));
@@ -107,7 +103,6 @@ class MetricControllerIntegrationTest {
             .andExpect(jsonPath("$.data[0].likes").value(30));
     }
 
-    // Chuỗi thời gian cho Chart.js: tăng dần theo thời điểm đo.
     @Test
     void timeSeriesReturnsAscendingOrder() throws Exception {
         saveMetric(10, LocalDateTime.now().minusDays(3));

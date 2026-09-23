@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class PostService {
-
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final SocialMetricRepository metricRepository;
@@ -42,7 +41,6 @@ public class PostService {
         this.postMapper = postMapper;
     }
 
-    // Lọc theo nền tảng (tuỳ chọn) + phân trang ở DB, mới nhất trước.
     public PageResponse<PostResponse> list(String platform, int page, int limit) {
         Pageable pageable = PageRequest.of(page - 1, limit,
             Sort.by(Sort.Direction.DESC, "createdAt").and(Sort.by(Sort.Direction.DESC, "id")));
@@ -64,7 +62,6 @@ public class PostService {
     @Transactional
     public PostResponse create(PostRequest request) {
         Platform platform = PlatformParser.parse(request.platform());
-        // Kiểm trước cho message rõ ràng; unique constraint ở DB vẫn là chốt chặn cuối.
         if (postRepository.existsByPlatformAndExternalId(platform, request.externalId())) {
             throw new DuplicateResourceException(
                 "Bài viết " + request.externalId() + " trên " + platform.getSlug() + " đã tồn tại");
@@ -89,7 +86,6 @@ public class PostService {
             .orElseThrow(() -> new ResourceNotFoundException("bài viết"));
         Platform platform = PlatformParser.parse(request.platform());
 
-        // Đổi sang cặp (platform, externalId) đã thuộc về bài khác -> 409.
         boolean identityChanged = platform != post.getPlatform()
             || !request.externalId().equals(post.getExternalId());
         if (identityChanged && postRepository.existsByPlatformAndExternalId(platform, request.externalId())) {

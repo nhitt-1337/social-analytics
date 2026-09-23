@@ -12,10 +12,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
-// Xuất Excel cho MỌI model, không cần model đó biết gì về Excel.
 @Component
 public class ModelExporter {
-
     private static final String DATE_TIME_PATTERN = "yyyy-mm-dd hh:mm:ss";
     private static final String DATE_PATTERN = "yyyy-mm-dd";
 
@@ -32,7 +30,6 @@ public class ModelExporter {
         return writeByReflection(rows, type, sheetName);
     }
 
-    // Tên cột suy ra được, cho phía gọi biết trước file sẽ có gì.
     public List<String> headers(Class<?> type) {
         return hasExcelColumns(type)
             ? excelMapper.describe(type).stream().map(ExcelField::header).toList()
@@ -56,7 +53,6 @@ public class ModelExporter {
 
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-
             Sheet sheet = workbook.createSheet(sheetName);
             CellStyle headerStyle = headerStyle(workbook);
             CellStyle dateTimeStyle = dateStyle(workbook, DATE_TIME_PATTERN);
@@ -91,11 +87,9 @@ public class ModelExporter {
         }
     }
 
-    // Kiểu lạ đổ về String.valueOf: thà một cột đọc tạm được còn hơn hỏng cả file
     private void fill(Cell cell, Object value, CellStyle dateTimeStyle, CellStyle dateOnlyStyle) {
         switch (value) {
             case null -> cell.setBlank();
-            // Number đã bao cả BigDecimal (tỷ giá từ SOAP), Integer, Long...
             case Number number -> cell.setCellValue(number.doubleValue());
             case Boolean bool -> cell.setCellValue(bool);
             case LocalDateTime dateTime -> {

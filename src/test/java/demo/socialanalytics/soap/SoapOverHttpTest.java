@@ -21,11 +21,9 @@ import java.net.http.HttpResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// MockWebServiceServer chặn dưới tầng HTTP: kiểm được XML mà không cần mở cổng
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class SoapOverHttpTest {
-
     @LocalServerPort int port;
     @Autowired Jaxb2Marshaller marshaller;
 
@@ -42,7 +40,6 @@ class SoapOverHttpTest {
         return "http://localhost:" + port + "/api/v1/soap";
     }
 
-    // Client SOAP là máy gọi máy, không có phiên đăng nhập trình duyệt.
     @Test
     void goiDuocSoapKhongCanDangNhap() {
         GetExchangeRateRequest request = new GetExchangeRateRequest();
@@ -63,7 +60,6 @@ class SoapOverHttpTest {
         assertThat(response.getGeneratedAt()).isNotNull();
     }
 
-    // Dùng HttpClient của JDK: không cần bean nào, và đi đúng đường HTTP thật.
     private HttpResponse<String> httpGet(String path) throws Exception {
         try (HttpClient client = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NEVER).build()) {
@@ -74,7 +70,6 @@ class SoapOverHttpTest {
         }
     }
 
-    // WSDL phải tải được thì client mới sinh được code từ hợp đồng.
     @Test
     void taiDuocWsdlSinhTuXsd() throws Exception {
         HttpResponse<String> response = httpGet("/api/v1/soap/socialAnalytics.wsdl");
@@ -86,7 +81,6 @@ class SoapOverHttpTest {
             .contains("http://demo/socialanalytics/ws");
     }
 
-    // Các endpoint khác VẪN phải yêu cầu đăng nhập — mở /soap không được kéo theo mở cả app.
     @Test
     void mienTruChiApDungChoSoap() throws Exception {
         assertThat(httpGet("/api/v1/posts").statusCode()).isEqualTo(401);

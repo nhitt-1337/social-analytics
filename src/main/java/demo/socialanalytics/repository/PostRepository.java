@@ -19,7 +19,6 @@ import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
-
     // Fetch user kèm theo vì mapper đọc tên người quản lý -> tránh N+1 khi liệt kê.
     @EntityGraph(attributePaths = "user")
     Page<Post> findAll(Pageable pageable);
@@ -30,30 +29,24 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = "user")
     Optional<Post> findWithUserById(Long id);
 
-    // Chặn import trùng: cùng một bài trên cùng một nền tảng chỉ lưu một lần.
     boolean existsByPlatformAndExternalId(Platform platform, String externalId);
 
     Optional<Post> findByPlatformAndExternalId(Platform platform, String externalId);
 
-    // Import Excel: lấy một lượt các bài đã tồn tại trong số externalId sắp nhập
     @Query("select new demo.socialanalytics.repository.projection.PostIdentity(p.platform, p.externalId) "
         + "from Post p where p.externalId in :externalIds")
     List<PostIdentity> findIdentitiesByExternalIdIn(@Param("externalIds") Collection<String> externalIds);
 
-    // Job crawl: lấy danh sách tài khoản CÓ bài viết, mỗi tài khoản sẽ là một tác vụ chạy song song.
     @Query("select distinct p.user.id from Post p")
     List<Long> findDistinctUserIds();
 
-    // Các bài của một tài khoản; job xử lý tuần tự trong phạm vi một tài khoản.
     List<Post> findByUserIdOrderByIdAsc(Long userId);
 
-    // Thống kê tổng hợp: đếm gộp trong MỘT truy vấn thay vì hỏi từng nền tảng một.
     @Query("select new demo.socialanalytics.repository.projection.PlatformCount("
         + "p.platform, count(p), count(distinct p.user.id)) "
         + "from Post p group by p.platform")
     List<PlatformCount> countGroupedByPlatform();
 
-    // Export báo cáo: lọc theo nền tảng và khoảng thời gian ĐĂNG BÀI; tham số nào null thì bỏ qua.
     @Query("""
         select p from Post p join fetch p.user
         where (:platform is null or p.platform = :platform)

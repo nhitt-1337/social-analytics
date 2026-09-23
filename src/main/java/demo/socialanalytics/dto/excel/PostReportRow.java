@@ -4,7 +4,6 @@ import demo.socialanalytics.excel.ExcelColumn;
 
 import java.time.LocalDateTime;
 
-// Một dòng trong file báo cáo xuất ra. Chỉ ghi nên dùng record được:
 public record PostReportRow(
 
     @ExcelColumn(header = "ID", order = 1)

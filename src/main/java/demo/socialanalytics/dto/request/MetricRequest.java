@@ -6,7 +6,6 @@ import jakarta.validation.constraints.PastOrPresent;
 
 import java.time.LocalDateTime;
 
-// Body ghi nhận một lần đo tương tác. Background job ở bước sau sẽ gọi chính service này.
 public record MetricRequest(
     @NotNull(message = "postId không được để trống")
     Long postId,
@@ -26,7 +25,6 @@ public record MetricRequest(
     @Min(value = 0, message = "followers không được nhỏ hơn 0")
     Integer followers,
 
-    // Bỏ trống thì lấy thời điểm hiện tại.
     @PastOrPresent(message = "collectedAt không được ở tương lai")
     LocalDateTime collectedAt
 ) {

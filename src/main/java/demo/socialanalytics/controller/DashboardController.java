@@ -20,11 +20,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// Trả về trang HTML (Thymeleaf), khác với các @RestController trả JSON.
 @Hidden
 @Controller
 public class DashboardController {
-
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
     private final CrawlStatusService crawlStatusService;
 
@@ -41,7 +39,6 @@ public class DashboardController {
         return "redirect:/dashboard";
     }
 
-    // Trang đăng nhập tự dựng thay trang mặc định của Spring Security
     @GetMapping("/login")
     public String login(Model model) {
         model.addAttribute("providers", availableProviders());
@@ -51,12 +48,10 @@ public class DashboardController {
     @GetMapping("/dashboard")
     public String dashboard(@AuthenticationPrincipal OAuth2User principal, Model model) {
         model.addAttribute("principal", principal);
-        // Rỗng khi job chưa chạy lần nào -> template hiện "chưa cập nhật lần nào".
         model.addAttribute("lastRun", crawlStatusService.lastRun().orElse(null));
         return "dashboard";
     }
 
-    // Endpoint để thử CSRF: form ở dashboard POST vào đây.
     @PostMapping("/dashboard/note")
     public String saveNote(
         @RequestParam(defaultValue = "") String note,
@@ -70,7 +65,6 @@ public class DashboardController {
         return "redirect:/dashboard";
     }
 
-    // Chỉ hiện nút của nhà cung cấp đã được cấu hình client id/secret.
     private List<Map<String, String>> availableProviders() {
         ClientRegistrationRepository repository = clientRegistrations.getIfAvailable();
         List<Map<String, String>> result = new ArrayList<>();

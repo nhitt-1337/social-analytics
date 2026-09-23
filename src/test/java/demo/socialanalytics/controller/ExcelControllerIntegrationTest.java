@@ -33,14 +33,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// Test đầu-cuối cho hai API Excel: đi qua HTTP thật, POI thật, DB thật (H2)
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-// Hai endpoint Excel đều yêu cầu đăng nhập; test nhắm vào hành vi nhập/xuất nên giả lập sẵn
 @WithMockUser
 class ExcelControllerIntegrationTest {
-
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired PostRepository posts;
@@ -60,8 +57,6 @@ class ExcelControllerIntegrationTest {
         admin.setRole(Role.ADMIN);
         admin = users.save(admin);
     }
-
-    // ----- helper -----
 
     private MockMultipartHttpServletRequestBuilder importRequest(byte[] content, String fileName) {
         MockMultipartFile file = new MockMultipartFile("file", fileName,
@@ -88,8 +83,6 @@ class ExcelControllerIntegrationTest {
         return posts.save(post);
     }
 
-    // ----- POST /import-posts -----
-
     @Test
     void importLuuBaiVietVaoDatabase() throws Exception {
         byte[] file = ExcelTestFiles.postsFile(List.of(
@@ -114,7 +107,6 @@ class ExcelControllerIntegrationTest {
             });
     }
 
-    // Import lại chính file cũ không được tạo bản ghi trùng.
     @Test
     void importLaiCungFileThiBoQuaToanBo() throws Exception {
         byte[] file = ExcelTestFiles.postsFile(List.of(
@@ -132,7 +124,6 @@ class ExcelControllerIntegrationTest {
         assertThat(posts.findAll()).hasSize(2);
     }
 
-    // Dòng hỏng bị loại, dòng tốt vẫn vào DB — không "được ăn cả ngã về không".
     @Test
     void dongLoiBiBoQuaNhungDongHopLeVanDuocLuu() throws Exception {
         byte[] file = ExcelTestFiles.postsFile(List.of(
@@ -182,7 +173,6 @@ class ExcelControllerIntegrationTest {
                 .value(org.hamcrest.Matchers.containsString(".xlsx")));
     }
 
-    // Form trên dashboard không gửi userId; lấy từ phiên đăng nhập.
     @Test
     void thieuUserIdThiLayNguoiDangDangNhap() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "posts.xlsx", null,
@@ -202,7 +192,6 @@ class ExcelControllerIntegrationTest {
             .satisfies(post -> assertThat(post.getUser().getId()).isEqualTo(admin.getId()));
     }
 
-    // Không có userId mà cũng không xác định được từ phiên -> báo lỗi rõ ràng.
     @Test
     void thieuUserIdVaKhongCoPhienThiTraVe400() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "posts.xlsx", null,
@@ -240,8 +229,6 @@ class ExcelControllerIntegrationTest {
             .andExpect(status().isBadRequest());
     }
 
-    // ----- GET /export-report -----
-
     @Test
     void exportTraVeFileExcelDungKieuNoiDungVaTenFile() throws Exception {
         savePost(Platform.FACEBOOK, "fb-001", LocalDateTime.of(2026, 3, 1, 9, 0));
@@ -270,7 +257,6 @@ class ExcelControllerIntegrationTest {
         MvcResult result = mvc.perform(exportRequest()).andExpect(status().isOk()).andReturn();
 
         List<List<String>> sheet = ExcelTestFiles.readAll(result.getResponse().getContentAsByteArray());
-        // Cột 9 (chỉ số 8) là "Lượt thích".
         assertThat(sheet.get(1).get(8)).isEqualTo("750");
     }
 
@@ -325,8 +311,6 @@ class ExcelControllerIntegrationTest {
 
         assertThat(ExcelTestFiles.readAll(result.getResponse().getContentAsByteArray())).hasSize(1);
     }
-
-    // ----- vòng tròn import -> export -----
 
     @Test
     void importXongExportRaDungNhungBaiVuaNhap() throws Exception {

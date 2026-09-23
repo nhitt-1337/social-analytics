@@ -10,12 +10,9 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Mỗi nhà cung cấp trả một kiểu JSON khác nhau
 class SocialUserAttributesTest {
-
     @Nested
     class Facebook {
-
         @Test
         void docDuocPayloadCuaFacebook() {
             var attributes = Map.<String, Object>of(
@@ -48,7 +45,6 @@ class SocialUserAttributesTest {
             assertThat(social.avatarUrl()).isNull();
         }
 
-        // Không xin được quyền ảnh, hoặc Facebook đổi payload -> không được ném lỗi.
         @Test
         void thieuHanTruongPictureThiVanDangNhapDuoc() {
             var social = SocialUserAttributes.of("facebook", Map.of("id", "1", "name", "A"));
@@ -57,7 +53,6 @@ class SocialUserAttributesTest {
             assertThat(social.avatarUrl()).isNull();
         }
 
-        // Người dùng có thể từ chối chia sẻ email dù đã xin scope.
         @Test
         void chapNhanFacebookKhongTraEmail() {
             var social = SocialUserAttributes.of("facebook",
@@ -70,8 +65,6 @@ class SocialUserAttributesTest {
 
     @Nested
     class X {
-
-        // /2/users/me trả lồng trong "data", DefaultOAuth2UserService không đọc được
         @Test
         void docDuocJsonLongTrongDataCuaX() {
             Map<String, Object> attributes = Map.of("data", Map.of(
@@ -88,7 +81,6 @@ class SocialUserAttributesTest {
             assertThat(social.avatarUrl()).isEqualTo("https://pbs.twimg.com/b.jpg");
         }
 
-        // X không trả email (cần quyền riêng) -> phải là null, không được bịa ra giá trị.
         @Test
         void xKhongCoEmail() {
             var social = SocialUserAttributes.of("x",
@@ -97,7 +89,6 @@ class SocialUserAttributesTest {
             assertThat(social.email()).isNull();
         }
 
-        // Tài khoản không đặt tên hiển thị thì lấy tạm username làm tên.
         @Test
         void thieuNameThiDungUsername() {
             var social = SocialUserAttributes.of("x",
@@ -106,7 +97,6 @@ class SocialUserAttributesTest {
             assertThat(social.fullName()).isEqualTo("abc");
         }
 
-        // Phòng khi X đổi sang trả phẳng: vẫn đọc được, không vỡ.
         @Test
         void vanDocDuocNeuKhongCoLopDataBocNgoai() {
             var social = SocialUserAttributes.of("x",
@@ -116,7 +106,6 @@ class SocialUserAttributesTest {
             assertThat(social.fullName()).isEqualTo("Tên");
         }
 
-        // "twitter" và "x" là cùng một nơi.
         @Test
         void chapNhanCaTenGoiTwitterLanX() {
             assertThat(AuthProvider.fromRegistrationId("twitter")).isEqualTo(AuthProvider.TWITTER);
@@ -124,7 +113,6 @@ class SocialUserAttributesTest {
         }
     }
 
-    // Ghép nhà cung cấp vào định danh: id trùng nhau giữa hai nền tảng không phải một người
     @Test
     void principalNameGomCaNhaCungCapVaId() {
         var facebook = SocialUserAttributes.of("facebook", Map.of("id", "100", "name", "A"));

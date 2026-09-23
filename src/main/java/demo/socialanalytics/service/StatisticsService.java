@@ -15,10 +15,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-// Dựng lại bảng thống kê tổng hợp từ dữ liệu bài viết.
 @Service
 public class StatisticsService {
-
     private static final Logger log = LoggerFactory.getLogger(StatisticsService.class);
 
     private final PostRepository postRepository;
@@ -39,7 +37,6 @@ public class StatisticsService {
         LocalDateTime now = LocalDateTime.now();
         List<PlatformSummary> result = new java.util.ArrayList<>();
 
-        // Duyệt qua MỌI nền tảng
         for (Platform platform : Platform.values()) {
             PlatformSummary summary = summaryRepository.findByPlatform(platform)
                 .orElseGet(() -> {

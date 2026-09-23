@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/crawl")
 public class CrawlController {
-
     private final CrawlStatusService crawlStatusService;
-    // Job tắt thì bean không tồn tại, nhưng endpoint xem trạng thái vẫn phải dùng được
     private final ObjectProvider<SocialMetricsUpdateJob> job;
 
     public CrawlController(CrawlStatusService crawlStatusService, ObjectProvider<SocialMetricsUpdateJob> job) {

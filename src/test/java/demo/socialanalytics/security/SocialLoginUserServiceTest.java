@@ -20,10 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-// Kiểm tra phần "lưu thông tin user" khi đăng nhập.
 @ExtendWith(MockitoExtension.class)
 class SocialLoginUserServiceTest {
-
     @Mock UserRepository userRepository;
 
     SocialLoginUserService service;
@@ -76,7 +74,6 @@ class SocialLoginUserServiceTest {
         assertThat(saved.getProviderId()).isEqualTo("fb-1");
         assertThat(saved.getEmail()).isEqualTo("a@example.com");
         assertThat(saved.getFullName()).isEqualTo("Nguyễn Văn A");
-        // Người đăng nhập qua mạng xã hội chỉ là USER, không tự động thành ADMIN.
         assertThat(saved.getRole()).isEqualTo(Role.USER);
     }
 
@@ -96,12 +93,10 @@ class SocialLoginUserServiceTest {
 
         assertThat(result.getId()).isEqualTo(7L);
         assertThat(result.getFullName()).isEqualTo("Tên mới");
-        // Không hạ quyền người đã là ADMIN chỉ vì họ đăng nhập lại.
         assertThat(result.getRole()).isEqualTo(Role.ADMIN);
         verify(userRepository, never()).findByEmail(any());
     }
 
-    // X không trả email -> không được ghi đè email cũ thành null.
     @Test
     void khongXoaEmailCuKhiNhaCungCapKhongTraEmail() {
         User existing = new User();
@@ -128,11 +123,9 @@ class SocialLoginUserServiceTest {
 
         assertThat(result.getEmail()).isNull();
         assertThat(result.getProvider()).isEqualTo(AuthProvider.TWITTER);
-        // Không tra theo email vì không có email để tra.
         verify(userRepository, never()).findByEmail(any());
     }
 
-    // Đã có sẵn tài khoản LOCAL cùng email -> gắn danh tính Facebook vào chính tài khoản đó
     @Test
     void ganDanhTinhVaoTaiKhoanLocalCungEmail() {
         User local = new User();
@@ -153,7 +146,6 @@ class SocialLoginUserServiceTest {
         assertThat(result.getRole()).isEqualTo(Role.ADMIN);
     }
 
-    // Email đó đã thuộc về một tài khoản mạng xã hội KHÁC -> không gắn đè, tạo tài khoản riêng
     @Test
     void khongGanDeLenTaiKhoanDaLienKetNhaCungCapKhac() {
         User other = new User();
@@ -189,7 +181,6 @@ class SocialLoginUserServiceTest {
         assertThat(result.getFullName()).isEqualTo("Tên cũ");
     }
 
-    // Thuộc tính đưa vào phiên đăng nhập: chỉ những gì dashboard cần, không bê nguyên payload.
     @Test
     void khoaPrincipalLaDinhDanhGomNhaCungCapVaId() {
         assertThat(SocialLoginUserService.PRINCIPAL_ATTRIBUTE).isEqualTo("principal");

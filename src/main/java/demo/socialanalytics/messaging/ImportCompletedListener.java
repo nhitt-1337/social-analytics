@@ -9,10 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
-// Nhận IMPORT_COMPLETED rồi tính lại thống kê tổng hợp.
 @Component
 public class ImportCompletedListener {
-
     private static final Logger log = LoggerFactory.getLogger(ImportCompletedListener.class);
 
     private final StatisticsService statisticsService;
@@ -34,13 +32,11 @@ public class ImportCompletedListener {
         log.info("Nhận IMPORT_COMPLETED trên luồng {}: {} bài mới",
             Thread.currentThread().getName(), message.imported());
 
-        // KHÔNG bắt exception ở đây. Ném ra là đúng ý: phiên có transaction sẽ rollback,
         var summaries = statisticsService.refresh();
 
         notifyDashboards(summaries);
     }
 
-    // Phát tin SAU khi thống kê đã tính xong, và KHÔNG được để lỗi ở đây thoát ra.
     private void notifyDashboards(java.util.List<demo.socialanalytics.entity.PlatformSummary> summaries) {
         try {
             broadcaster.statisticsUpdated(

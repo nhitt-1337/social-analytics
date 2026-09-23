@@ -22,7 +22,6 @@ import java.util.List;
 @ConditionalOnExpression(
     "!'${social.login.facebook.client-id:}'.isBlank() or !'${social.login.x.client-id:}'.isBlank()")
 public class SocialLoginClientRegistrations {
-
     private static final Logger log = LoggerFactory.getLogger(SocialLoginClientRegistrations.class);
 
     @Bean
@@ -36,7 +35,6 @@ public class SocialLoginClientRegistrations {
             registrations.add(x(properties.x()));
         }
         if (registrations.isEmpty()) {
-            // Có client id nhưng thiếu secret thì báo thẳng, đừng để nút đăng nhập biến mất lặng lẽ
             throw new IllegalStateException(
                 "Social Login cần CẢ client-id và client-secret. Kiểm tra FACEBOOK_CLIENT_SECRET "
                     + "hoặc X_CLIENT_SECRET.");
@@ -47,7 +45,6 @@ public class SocialLoginClientRegistrations {
         return new InMemoryClientRegistrationRepository(registrations);
     }
 
-    // Lưu token xuống DB thay cho bản in-memory mặc định của Spring Security.
     @Bean
     public JpaOAuth2AuthorizedClientService jpaOAuth2AuthorizedClientService(
         AuthorizedClientJpaRepository authorizedClientJpaRepository,
@@ -66,13 +63,11 @@ public class SocialLoginClientRegistrations {
             .scope(credentials.scopes().toArray(String[]::new))
             .authorizationUri("https://www.facebook.com/dialog/oauth")
             .tokenUri("https://graph.facebook.com/oauth/access_token")
-            // Xin luôn ảnh đại diện.
             .userInfoUri("https://graph.facebook.com/me?fields=id,name,email,picture.type(large)")
             .userNameAttributeName("id")
             .build();
     }
 
-    // Twitter nay là X; hằng dựng sẵn của Spring Security đã trỏ sang x.com nên giữ nguyên.
     private ClientRegistration x(SocialLoginProperties.Credentials credentials) {
         return CommonOAuth2Provider.X.getBuilder("x")
             .clientId(credentials.clientId())

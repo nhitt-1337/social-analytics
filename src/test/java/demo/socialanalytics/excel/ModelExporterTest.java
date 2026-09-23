@@ -14,18 +14,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Reflection nâng cao: xuất Excel cho model BẤT KỲ, không cần annotation nào.
 class ModelExporterTest {
-
     private final ModelExporter exporter = new ModelExporter(new ExcelMapper());
 
-    // ----- model thí nghiệm -----
-
-    // record: thứ tự cột theo đúng thứ tự khai báo component.
     record SimpleRecord(Long id, String name, Integer score, LocalDateTime createdAt) {
     }
 
-    // Lớp thường có getter.
     @Getter
     @Setter
     static class Bean {
@@ -35,7 +29,6 @@ class ModelExporterTest {
         private Platform platform;
     }
 
-    // Không có getter nào -> phải đọc thẳng field.
     static class FieldOnly {
         private final String code;
         private final int amount;
@@ -46,7 +39,6 @@ class ModelExporterTest {
         }
     }
 
-    // Có @ExcelColumn -> phải đi đường ExcelMapper, tôn trọng khai báo tường minh.
     record Annotated(
         @ExcelColumn(header = "Mã số", order = 2) String code,
         @ExcelColumn(header = "Tên gọi", order = 1) String name
@@ -56,7 +48,6 @@ class ModelExporterTest {
     static class NoProperties {
     }
 
-    // Getter tự ném lỗi, mô phỏng lazy loading ngoài transaction.
     static class Exploding {
         private String value = "x";
 
@@ -67,7 +58,6 @@ class ModelExporterTest {
 
     @Nested
     class SuyRaCot {
-
         @Test
         void recordGiuNguyenThuTuKhaiBao() {
             assertThat(exporter.headers(SimpleRecord.class))
@@ -80,7 +70,6 @@ class ModelExporterTest {
                 .containsExactly("Id", "Title", "Active", "Platform");
         }
 
-        // camelCase -> "Created at", khỏi phải khai tay tiêu đề từng cột.
         @Test
         void doiCamelCaseThanhTieuDeDocDuoc() {
             assertThat(ModelIntrospector.toHeader("externalId")).isEqualTo("External id");
@@ -88,7 +77,6 @@ class ModelExporterTest {
             assertThat(ModelIntrospector.toHeader("succeededPosts")).isEqualTo("Succeeded posts");
         }
 
-        // Có khai báo tường minh thì khai báo thắng suy đoán.
         @Test
         void coExcelColumnThiTonTrongKhaiBao() {
             assertThat(exporter.headers(Annotated.class))
@@ -111,7 +99,6 @@ class ModelExporterTest {
 
     @Nested
     class XuatFile {
-
         @Test
         void xuatDuocRecordKhongCanAnnotation() {
             var rows = List.of(
@@ -125,7 +112,6 @@ class ModelExporterTest {
             assertThat(sheet).hasSize(3);
         }
 
-        // Ưu tiên GỌI METHOD chứ không đọc field: getter mới là phần công khai của lớp.
         @Test
         void goiGetterChuKhongDocThangField() {
             Bean bean = new Bean();
@@ -151,7 +137,6 @@ class ModelExporterTest {
                 .satisfies(property -> assertThat(property.getter().getName()).isEqualTo("isActive"));
         }
 
-        // Không có getter thì đọc thẳng field — vẫn xuất được.
         @Test
         void khongCoGetterThiDocThangField() {
             var sheet = ExcelTestFiles.readAll(
@@ -188,7 +173,6 @@ class ModelExporterTest {
             assertThat(sheet.get(1)).containsExactly("Tên", "A1");
         }
 
-        // Getter hỏng thì báo rõ THUỘC TÍNH NÀO, không để lọt một ngoại lệ trống trơn.
         @Test
         void getterNemLoiThiNoiRoThuocTinh() {
             assertThatThrownBy(() ->
@@ -198,7 +182,6 @@ class ModelExporterTest {
         }
     }
 
-    // Kiểu lạ không có cách hiển thị riêng thì đổ về chuỗi, thà đọc tạm được còn hơn hỏng cả file.
     record WithOddTypes(String name, LocalDate date, List<String> tags, java.math.BigDecimal rate) {
     }
 

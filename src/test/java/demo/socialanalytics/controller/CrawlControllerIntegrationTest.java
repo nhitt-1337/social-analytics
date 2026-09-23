@@ -20,7 +20,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// API trạng thái job + màn hình "Last updated time".
 @SpringBootTest(properties = {
     "social.crawl.enabled=true",
     "social.crawl.initial-delay=PT24H",
@@ -30,7 +29,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class CrawlControllerIntegrationTest {
-
     @Autowired MockMvc mvc;
     @Autowired SocialMetricsUpdateJob job;
     @Autowired UserRepository users;
@@ -67,8 +65,6 @@ class CrawlControllerIntegrationTest {
         return builder.contextPath("/api/v1").servletPath(path);
     }
 
-    // ----- bảo mật -----
-
     @Test
     void chuaDangNhapThiKhongXemDuocTrangThai() throws Exception {
         mvc.perform(api("get", "/crawl/last-run").accept(MediaType.APPLICATION_JSON))
@@ -83,8 +79,6 @@ class CrawlControllerIntegrationTest {
 
         assertThat(crawlRuns.findAll()).isEmpty();
     }
-
-    // ----- trạng thái -----
 
     @Test
     @WithMockUser
@@ -123,8 +117,6 @@ class CrawlControllerIntegrationTest {
             .andExpect(jsonPath("$.data.length()").value(2));
     }
 
-    // ----- chạy ngay -----
-
     @Test
     @WithMockUser
     void chayNgayKemTokenThiCapNhatDuLieu() throws Exception {
@@ -137,8 +129,6 @@ class CrawlControllerIntegrationTest {
 
         assertThat(metrics.findAll()).hasSize(1);
     }
-
-    // ----- màn hình "Last updated time" -----
 
     @Test
     @WithMockUser

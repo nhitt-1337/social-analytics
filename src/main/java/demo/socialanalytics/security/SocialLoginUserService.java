@@ -20,11 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-// Chạy sau khi đổi code lấy token xong: gọi user-info của nhà cung cấp rồi lưu/cập nhật User.
 @Service
 public class SocialLoginUserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
-
-    // Khoá thuộc tính dùng làm tên định danh của principal, vd "facebook:123456".
     public static final String PRINCIPAL_ATTRIBUTE = "principal";
 
     private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
@@ -54,7 +51,6 @@ public class SocialLoginUserService implements OAuth2UserService<OAuth2UserReque
 
         User user = upsert(social);
 
-        // Chỉ đưa vào phiên những thuộc tính mình thật sự dùng
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put(PRINCIPAL_ATTRIBUTE, social.principalName());
         attributes.put("userId", user.getId());
@@ -69,7 +65,6 @@ public class SocialLoginUserService implements OAuth2UserService<OAuth2UserReque
             PRINCIPAL_ATTRIBUTE);
     }
 
-    // Đăng nhập lần đầu thì tạo tài khoản, lần sau thì cập nhật thông tin hồ sơ.
     private User upsert(SocialUserAttributes social) {
         User user = userRepository
             .findByProviderAndProviderId(social.provider(), social.providerId())

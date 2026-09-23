@@ -5,9 +5,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 
-// Dựng sẵn entity cho test.
 public final class TestEntities {
-
     private TestEntities() {
     }
 

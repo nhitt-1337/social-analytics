@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-// Bài viết trên mạng xã hội cần theo dõi tương tác.
 @Getter
 @Entity
 @Table(
@@ -22,12 +21,10 @@ import java.util.List;
     }
 )
 public class Post {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Người quản lý bài viết này trên dashboard.
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @Setter
@@ -50,12 +47,10 @@ public class Post {
     @Setter
     private String url;
 
-    // Thời điểm bài được đăng trên nền tảng (khác created_at là lúc nhập vào hệ thống).
     @Column(name = "posted_at")
     @Setter
     private LocalDateTime postedAt;
 
-    // Xoá bài thì xoá luôn lịch sử chỉ số của nó.
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SocialMetric> metrics = new ArrayList<>();
 

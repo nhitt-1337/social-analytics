@@ -17,11 +17,9 @@ import java.nio.charset.StandardCharsets;
 import static org.springframework.ws.test.server.RequestCreators.withPayload;
 import static org.springframework.ws.test.server.ResponseMatchers.*;
 
-// Gửi thẳng payload vào MessageDispatcher, bỏ qua HTTP
 @SpringBootTest
 @ActiveProfiles("test")
 class SocialAnalyticsEndpointTest {
-
     private static final String NS = "http://demo/socialanalytics/ws";
 
     @Autowired ApplicationContext applicationContext;
@@ -102,7 +100,6 @@ class SocialAnalyticsEndpointTest {
                 .evaluatesTo(25400));
     }
 
-    // Tiền tệ không hỗ trợ -> SOAP Fault, không phải trả về 0 hay để rỗng.
     @Test
     void tienTeKhongHoTroThiTraVeSoapFault() throws Exception {
         client.sendRequest(withPayload(xml("""
@@ -114,7 +111,6 @@ class SocialAnalyticsEndpointTest {
             .andExpect(clientOrSenderFault());
     }
 
-    // Định tuyến SOAP dựa trên TÊN PHẦN TỬ GỐC kèm namespace, không dựa trên URL
     @Test
     void namespaceSaiKhongKhopEndpoint() {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->

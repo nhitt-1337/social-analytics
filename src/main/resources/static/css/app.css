@@ -40,7 +40,6 @@ hr { border: 0; border-top: 1px solid #e4e6eb; margin: 24px 0; }
 .badge.warn { background: #fff8e1; color: #8a6d00; }
 .badge.run { background: #e7f0fd; color: #1877f2; }
 
-/* ----- trang đăng nhập ----- */
 body.centered {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
 }
@@ -52,7 +51,6 @@ body.centered {
     margin: 8px 0 0; text-align: left; font-size: 12px; overflow-x: auto;
 }
 
-/* Nút dùng đúng màu nhận diện của từng nhà cung cấp — người dùng nhận ra ngay bằng mắt. */
 .btn-provider {
     display: flex; align-items: center; justify-content: center; gap: 10px;
     width: 100%; padding: 11px 16px; border-radius: 8px;
@@ -64,7 +62,6 @@ body.centered {
 .provider-facebook { background: #1877f2; }
 .provider-x { background: #000; }
 
-/* ----- biểu đồ ----- */
 .chart-box {
     position: relative; height: 280px; margin: 12px 0 20px;
     background: #fff; border: 1px solid #e4e6eb; border-radius: 8px; padding: 12px;
@@ -77,10 +74,8 @@ input[type=file] {
     border: 1px solid #ccd0d5; border-radius: 8px; background: #fff; font: inherit;
 }
 
-/* Kết quả nhập Excel: giữ xuống dòng như <pre> nhưng dùng màu của alert */
 pre.alert { white-space: pre-wrap; font: inherit; margin: 12px 0; }
 
-/* Nút phụ: viền nhạt, để nút chính nổi hơn */
 .btn-ghost {
     background: #fff; color: #1c1e21; border: 1px solid #ccd0d5;
 }

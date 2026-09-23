@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @ActiveProfiles("test")
 class SocialMetricRepositoryTest {
-
     @Autowired SocialMetricRepository metricRepository;
     @Autowired TestEntityManager entityManager;
 
@@ -68,7 +67,6 @@ class SocialMetricRepositoryTest {
             .satisfies(metric -> assertThat(metric.getLikes()).isEqualTo(300));
     }
 
-    // Hai lần đo CÙNG thời điểm -> lấy bản có id lớn hơn (ghi sau) để kết quả luôn xác định.
     @Test
     void cungThoiDiemDoThiUuTienBanGhiSau() {
         LocalDateTime sameMoment = LocalDateTime.of(2026, 4, 1, 8, 0);
@@ -116,7 +114,6 @@ class SocialMetricRepositoryTest {
         assertThat(page.getContent()).extracting(SocialMetric::getLikes).containsExactly(10);
     }
 
-    // Một lần gọi lấy chỉ số nhiều bài, đã sắp giảm dần theo thời điểm đo
     @Test
     void layChiSoCuaNhieuBaiTrongMotLan() {
         persistMetric(firstPost, 100, LocalDateTime.of(2026, 4, 1, 8, 0));
@@ -128,7 +125,6 @@ class SocialMetricRepositoryTest {
             List.of(firstPost.getId(), secondPost.getId()));
 
         assertThat(metrics).hasSize(3);
-        // Trong nhóm của firstPost, bản 300 (đo ngày 3/4) phải đứng trước bản 100 (ngày 1/4).
         List<SocialMetric> ofFirstPost = metrics.stream()
             .filter(metric -> metric.getPost().getId().equals(firstPost.getId()))
             .toList();
@@ -160,7 +156,6 @@ class SocialMetricRepositoryTest {
         assertThat(metricRepository.sumLikesByPostId(firstPost.getId())).isEqualTo(350L);
     }
 
-    // coalesce trong câu query đảm bảo trả 0 chứ không phải null khi chưa có lần đo nào.
     @Test
     void tongLuotThichLa0KhiChuaCoLanDoNao() {
         assertThat(metricRepository.sumLikesByPostId(firstPost.getId())).isZero();

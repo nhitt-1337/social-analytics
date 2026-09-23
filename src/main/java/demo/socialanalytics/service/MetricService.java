@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 @Service
 @Transactional(readOnly = true)
 public class MetricService {
-
     private final SocialMetricRepository metricRepository;
     private final PostRepository postRepository;
     private final MetricMapper metricMapper;
@@ -43,7 +42,6 @@ public class MetricService {
         return PageResponse.of(metricRepository.findByPostId(postId, pageable).map(metricMapper::toResponse));
     }
 
-    // Chuỗi thời gian cho biểu đồ: không phân trang, sắp tăng dần theo thời điểm đo.
     public ListResponse<MetricResponse> timeSeries(Long postId, LocalDateTime from, LocalDateTime to) {
         requirePost(postId);
         LocalDateTime end = to != null ? to : LocalDateTime.now();
@@ -59,7 +57,6 @@ public class MetricService {
             .orElseThrow(() -> new ResourceNotFoundException("chỉ số")));
     }
 
-    // Background job crawl ở bước sau sẽ gọi đúng method này.
     @Transactional
     public MetricResponse record(MetricRequest request) {
         Post post = postRepository.findById(request.postId())

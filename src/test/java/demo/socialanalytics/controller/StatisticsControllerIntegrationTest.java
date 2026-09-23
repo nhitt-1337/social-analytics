@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class StatisticsControllerIntegrationTest {
-
     @Autowired MockMvc mvc;
     @Autowired StatisticsService statisticsService;
     @Autowired UserRepository users;

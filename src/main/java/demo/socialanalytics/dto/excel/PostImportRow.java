@@ -7,11 +7,9 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Một dòng trong file Excel import bài viết.
 @Getter
 @Setter
 public class PostImportRow {
-
     @ExcelColumn(header = "platform", order = 1, required = true)
     private Platform platform;
 

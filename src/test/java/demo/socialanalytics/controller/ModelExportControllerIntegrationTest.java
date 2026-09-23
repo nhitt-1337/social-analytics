@@ -22,7 +22,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class ModelExportControllerIntegrationTest {
-
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired PostRepository posts;
@@ -58,7 +57,6 @@ class ModelExportControllerIntegrationTest {
             .andExpect(status().isUnauthorized());
     }
 
-    // Liệt kê được model nào xuất được và mỗi model có cột gì — cột do Reflection suy ra.
     @Test
     @WithMockUser
     void lietKeModelVaCotCuaTungModel() throws Exception {
@@ -84,7 +82,6 @@ class ModelExportControllerIntegrationTest {
         assertThat(sheet.get(1)).contains("facebook", "fb-1");
     }
 
-    // Cùng một endpoint xuất được nhiều loại model khác nhau.
     @Test
     @WithMockUser
     void cungMotEndpointXuatDuocNhieuModel() throws Exception {
@@ -92,7 +89,6 @@ class ModelExportControllerIntegrationTest {
             var result = mvc.perform(api("/export/" + model))
                 .andExpect(status().isOk())
                 .andReturn();
-            // Model nào cũng ra file hợp lệ, ít nhất có dòng tiêu đề.
             assertThat(ExcelTestFiles.readAll(result.getResponse().getContentAsByteArray()))
                 .isNotEmpty();
         }

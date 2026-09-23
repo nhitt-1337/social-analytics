@@ -6,7 +6,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Người dùng dashboard.
 @Getter
 @Entity
 @Table(
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
     indexes = @Index(name = "idx_user_email", columnList = "email")
 )
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,7 +32,6 @@ public class User {
     @Setter
     private AuthProvider provider = AuthProvider.LOCAL;
 
-    // Null với tài khoản LOCAL.
     @Column(name = "provider_id", length = 100)
     @Setter
     private String providerId;

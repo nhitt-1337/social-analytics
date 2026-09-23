@@ -1,4 +1,3 @@
-// Tải dữ liệu lần đầu bằng REST rồi đăng ký /topic/chart.
 // Server đẩy xuống dữ liệu đã tính sẵn, không phải tín hiệu "có thay đổi".
 
 const API_BASE = '/api/v1';
@@ -107,7 +106,6 @@ function connectLiveUpdates() {
     const client = new StompJs.Client({
         // SockJS: chặn WebSocket thì tự lùi về HTTP long-polling
         webSocketFactory: () => new SockJS(API_BASE + '/ws'),
-        // Tự nối lại sau 5s, nếu không tab mở lâu sẽ âm thầm ngừng cập nhật
         reconnectDelay: 5000
     });
 

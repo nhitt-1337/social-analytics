@@ -16,26 +16,20 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Đọc/ghi Excel cho BẤT KỲ class nào có field gắn @ExcelColumn.
 @Component
 public class ExcelMapper {
-
-    // Chặn file quá lớn làm hết bộ nhớ; đủ rộng cho nhu cầu import thủ công.
     public static final int MAX_DATA_ROWS = 5_000;
 
     private static final String DATE_TIME_PATTERN = "yyyy-mm-dd hh:mm:ss";
 
-    // Quét annotation một lần cho mỗi class rồi dùng lại — Reflection chỉ tốn ở lần đầu.
     private final Map<Class<?>, List<ExcelField>> cache = new ConcurrentHashMap<>();
 
-    // Danh sách cột của một class, đã sắp theo order.
     public List<ExcelField> describe(Class<?> type) {
         return cache.computeIfAbsent(type, ExcelMapper::scan);
     }
 
     private static List<ExcelField> scan(Class<?> type) {
         List<ExcelField> fields = new ArrayList<>();
-        // Duyệt cả class cha để DTO có thể kế thừa cột chung.
         for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
             for (Field field : current.getDeclaredFields()) {
                 ExcelColumn column = field.getAnnotation(ExcelColumn.class);
@@ -53,8 +47,6 @@ public class ExcelMapper {
         fields.sort(Comparator.comparingInt(ExcelField::order));
         return List.copyOf(fields);
     }
-
-    // ---------- ĐỌC ----------
 
     public <T> ExcelReadResult<T> read(InputStream input, Class<T> type) {
         List<ExcelField> fields = describe(type);
@@ -85,7 +77,6 @@ public class ExcelMapper {
                     throw new ExcelParseException(
                         "File vượt quá " + MAX_DATA_ROWS + " dòng dữ liệu, hãy tách nhỏ file");
                 }
-                // Excel đánh số dòng từ 1, POI từ 0.
                 int displayRow = index + 1;
                 try {
                     rows.add(new ExcelRow<>(displayRow, bind(row, type, layout)));
@@ -100,7 +91,6 @@ public class ExcelMapper {
         } catch (EncryptedDocumentException exception) {
             throw new ExcelParseException("File Excel đang được đặt mật khẩu", exception);
         } catch (UnsupportedFileFormatException | IOException exception) {
-            // Nội dung không phải workbook (vd đổi đuôi .txt thành .xlsx) hoặc file bị hỏng.
             throw new ExcelParseException("File tải lên không phải file Excel hợp lệ hoặc đã bị hỏng", exception);
         }
     }
@@ -110,14 +100,12 @@ public class ExcelMapper {
         for (Cell cell : headerRow) {
             String text = cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : null;
             if (text != null && !text.isBlank()) {
-                // So khớp không phân biệt hoa thường và khoảng trắng thừa
                 indexes.putIfAbsent(normalize(text), cell.getColumnIndex());
             }
         }
         return indexes;
     }
 
-    // Ghép mỗi field với chỉ số cột trong file.
     private Map<ExcelField, Integer> matchColumns(List<ExcelField> fields, Map<String, Integer> columnIndexes) {
         Map<ExcelField, Integer> layout = new LinkedHashMap<>();
         List<String> missingRequired = new ArrayList<>();
@@ -183,14 +171,11 @@ public class ExcelMapper {
         return header.trim().toLowerCase(Locale.ROOT);
     }
 
-    // ---------- GHI ----------
-
     public <T> byte[] write(List<T> rows, Class<T> type, String sheetName) {
         List<ExcelField> fields = describe(type);
 
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-
             Sheet sheet = workbook.createSheet(sheetName);
             CellStyle headerStyle = headerStyle(workbook);
             CellStyle dateStyle = dateStyle(workbook);
@@ -213,7 +198,6 @@ public class ExcelMapper {
             for (int column = 0; column < fields.size(); column++) {
                 sheet.autoSizeColumn(column);
             }
-            // Giữ dòng tiêu đề luôn hiện khi cuộn.
             sheet.createFreezePane(0, 1);
 
             workbook.write(output);

@@ -38,7 +38,6 @@ async function runCrawlNow() {
             return;
         }
         const run = await response.json();
-        // Không tải lại trang: ô trạng thái và biểu đồ đã tự đổi qua WebSocket
         output.textContent =
             'Xong sau ' + run.durationMs + ' ms — ' +
             run.succeededPosts + '/' + run.totalPosts + ' bài.\n' +
@@ -48,7 +47,6 @@ async function runCrawlNow() {
     }
 }
 
-// Dùng fetch thay form submit để hiện kết quả ngay tại chỗ
 async function importExcel() {
     const input = document.getElementById('importFile');
     const output = document.getElementById('importResult');
@@ -79,7 +77,6 @@ async function importExcel() {
             return;
         }
 
-        // Bỏ qua vài dòng không phải thất bại — hiển thị phải nói rõ
         output.className = data.imported > 0 ? 'alert ok' : 'alert warn';
         let text = data.imported > 0
             ? '✓ Đã nhập ' + data.imported + '/' + data.totalRows + ' bài viết.'

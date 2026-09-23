@@ -36,14 +36,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 @WithMockUser
 class PostControllerTest {
-
     private static final String BASE = "/api/v1/posts";
 
     @Autowired MockMvc mvc;
 
     @MockitoBean PostService postService;
 
-    // SecurityConfig cần bean này; lát cắt web không nạp @Service nên phải mock
     @MockitoBean SocialLoginUserService socialLoginUserService;
 
     private PostResponse sampleResponse() {
@@ -61,8 +59,6 @@ class PostControllerTest {
             """;
     }
 
-    // ----- GET /posts -----
-
     @Test
     void danhSachTraVeKhuonPhanTrang() throws Exception {
         when(postService.list(isNull(), eq(1), eq(20)))
@@ -77,7 +73,6 @@ class PostControllerTest {
             .andExpect(jsonPath("$.data[0].latestMetric.likes").value(500));
     }
 
-    // Không truyền page/limit thì controller phải tự điền mặc định 1 và 20.
     @Test
     void dungGiaTriMacDinhKhiKhongTruyenPageVaLimit() throws Exception {
         when(postService.list(any(), anyInt(), anyInt())).thenReturn(new PageResponse<>(List.of(), 0, 1, 20));
@@ -118,7 +113,6 @@ class PostControllerTest {
         verifyNoInteractions(postService);
     }
 
-    // Lỗi do service ném ra phải được GlobalExceptionHandler đổi thành 400 đúng khuôn.
     @Test
     void nenTangKhongHopLeTraVe400() throws Exception {
         when(postService.list(eq("instagram"), anyInt(), anyInt()))
@@ -128,8 +122,6 @@ class PostControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.message").value(containsString("instagram")));
     }
-
-    // ----- GET /posts/{id} -----
 
     @Test
     void chiTietTraVe200() throws Exception {
@@ -150,7 +142,6 @@ class PostControllerTest {
             .andExpect(jsonPath("$.error.code").value("NOT_FOUND"));
     }
 
-    // id không phải số -> 400 với thông báo tiếng Việt, không lộ tên lớp Java.
     @Test
     void idKhongPhaiSoThiTraVe400() throws Exception {
         mvc.perform(req("get", "/abc"))
@@ -159,8 +150,6 @@ class PostControllerTest {
 
         verifyNoInteractions(postService);
     }
-
-    // ----- POST /posts -----
 
     @Test
     void taoMoiTraVe201() throws Exception {
@@ -216,8 +205,6 @@ class PostControllerTest {
             .andExpect(jsonPath("$.error.code").value("CONFLICT"));
     }
 
-    // ----- PUT / DELETE -----
-
     @Test
     void capNhatTraVe200() throws Exception {
         when(postService.update(eq(1L), any(PostRequest.class))).thenReturn(sampleResponse());
@@ -258,7 +245,6 @@ class PostControllerTest {
             default -> get(url);
         };
         builder.contextPath("/api/v1").servletPath(servletPath);
-        // CSRF bật cho toàn ứng dụng nên mọi request làm thay đổi dữ liệu đều phải kèm token
         if (!"get".equals(method)) {
             builder.with(csrf());
         }

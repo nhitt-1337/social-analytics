@@ -17,7 +17,6 @@ import java.util.concurrent.CompletableFuture;
 // Rate limit theo token: song song theo tài khoản, tuần tự trong một tài khoản
 @Service
 public class SocialMetricsCollector {
-
     private static final Logger log = LoggerFactory.getLogger(SocialMetricsCollector.class);
 
     private final PostRepository postRepository;
@@ -34,7 +33,6 @@ public class SocialMetricsCollector {
         this.metricWriter = metricWriter;
     }
 
-    // Trả CompletableFuture chứ không phải void, vì job cần BIẾT khi nào xong và kết quả ra sao.
     @Async(AsyncConfig.CRAWL_EXECUTOR)
     public CompletableFuture<AccountCrawlResult> collectForAccount(Long userId) {
         List<Post> posts = loadPosts(userId);
@@ -48,7 +46,6 @@ public class SocialMetricsCollector {
 
         for (Post post : posts) {
             if (Thread.currentThread().isInterrupted()) {
-                // Ứng dụng đang tắt hoặc lần chạy đã quá hạn: dừng sớm, phần đã ghi vẫn giữ.
                 log.warn("Dừng sớm khi crawl tài khoản {}: luồng bị ngắt", userId);
                 break;
             }
@@ -64,14 +61,12 @@ public class SocialMetricsCollector {
             new AccountCrawlResult(userId, posts.size(), succeeded, failed));
     }
 
-    // Lỗi của MỘT bài chỉ dừng lại ở bài đó.
     private boolean crawlOnePost(Post post) {
         try {
             SocialMetricsSnapshot snapshot = socialApiClient.fetchMetrics(post);
             metricWriter.record(post.getId(), snapshot, LocalDateTime.now());
             return true;
         } catch (Exception exception) {
-            // Ghi cả stack trace: đây là luồng nền, không có ai nhìn thấy lỗi ngoài log.
             log.warn("Không crawl được bài {} ({}): {}",
                 post.getId(), post.getExternalId(), exception.getMessage(), exception);
             return false;

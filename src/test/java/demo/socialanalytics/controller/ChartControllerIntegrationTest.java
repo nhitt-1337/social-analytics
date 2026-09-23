@@ -26,7 +26,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @WithMockUser
 class ChartControllerIntegrationTest {
-
     @Autowired MockMvc mvc;
     @Autowired StatisticsService statisticsService;
     @Autowired UserRepository users;
@@ -83,7 +82,6 @@ class ChartControllerIntegrationTest {
 
         mvc.perform(chartData())
             .andExpect(status().isOk())
-            // labels và mỗi series cùng số phần tử, cùng thứ tự — đúng dạng Chart.js cần.
             .andExpect(jsonPath("$.labels.length()").value(2))
             .andExpect(jsonPath("$.likes.length()").value(2))
             .andExpect(jsonPath("$.likes[0]").value(100))

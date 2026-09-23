@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PostMapper {
-
     private final MetricMapper metricMapper;
 
     public PostMapper(MetricMapper metricMapper) {

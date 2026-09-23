@@ -34,8 +34,6 @@ import java.util.Set;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    // Đường dẫn công khai: trang đăng nhập, luồng OAuth2, tài nguyên tĩnh và tài liệu API
     private static final String[] PUBLIC_PATHS = {
         "/login", "/error", "/css/**", "/js/**", "/favicon.ico",
         "/oauth2/**", "/login/oauth2/**",
@@ -48,18 +46,13 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
         HttpSecurity http,
         SocialLoginUserService socialLoginUserService,
-        // Chưa cấu hình Social Login thì không có bean này; lấy kiểu "có thì dùng" để app vẫn chạy
         ObjectProvider<ClientRegistrationRepository> clientRegistrations
     ) throws Exception {
-
         http
-            // CSRF BẬT (mặc định của Spring Security, ở đây khai báo tường minh cho rõ ý).
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                // Bỏ CSRF cho endpoint SOAP: client SOAP gửi POST và không có khái niệm token CSRF.
                 .ignoringRequestMatchers(WebServiceConfig.PATH + "/**")
-                // Bỏ CSRF cho endpoint WebSocket.
                 .ignoringRequestMatchers(WebSocketConfig.ENDPOINT + "/**"))
 
             // Từ Spring Security 6 token CSRF nạp lười: không chạm tới thì cookie không được gửi
@@ -89,7 +82,6 @@ public class SecurityConfig {
         try {
             http.oauth2Login(oauth2 -> oauth2
                 .loginPage("/login")
-                // Đăng nhập xong về thẳng dashboard.
                 .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/login?error")
                 .authorizationEndpoint(endpoint -> endpoint
@@ -121,13 +113,11 @@ public class SecurityConfig {
         return resolver;
     }
 
-    // Đọc token CSRF ra để CsrfFilter ghi cookie XSRF-TOKEN cho trình duyệt.
     static class CsrfCookieFilter extends OncePerRequestFilter {
         @Override
         protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-
             CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
             if (token != null) {
                 token.getToken();

@@ -19,11 +19,9 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-// Job cập nhật chỉ số mạng xã hội, chạy mỗi 1 giờ.
 @Component
 @ConditionalOnProperty(name = "social.crawl.enabled", havingValue = "true", matchIfMissing = true)
 public class SocialMetricsUpdateJob {
-
     private static final Logger log = LoggerFactory.getLogger(SocialMetricsUpdateJob.class);
 
     private final PostRepository postRepository;
@@ -33,7 +31,7 @@ public class SocialMetricsUpdateJob {
     private final DashboardBroadcaster broadcaster;
     private final ChartDataService chartDataService;
 
-    // Chặn hai lần chạy chồng lên nhau. fixedDelay đã lo cho lịch tự động, nhưng nút "chạy ngay"
+    // Chặn hai lần chạy chồng lên nhau: nút "chạy ngay" có thể bấm trúng lúc job đang chạy
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     public SocialMetricsUpdateJob(
@@ -60,7 +58,6 @@ public class SocialMetricsUpdateJob {
         runOnce();
     }
 
-    // Tách khỏi method @Scheduled để dashboard gọi được "chạy ngay" mà không phải đợi tới giờ.
     public CrawlRun runOnce() {
         if (!running.compareAndSet(false, true)) {
             log.info("Bỏ qua: đang có một lần crawl khác chạy dở");
@@ -82,11 +79,9 @@ public class SocialMetricsUpdateJob {
         log.info("Bắt đầu crawl: {} tài khoản, bể {} luồng", userIds.size(), properties.poolSize());
 
         if (userIds.isEmpty()) {
-            // Không có gì để làm KHÔNG phải là thất bại -> truyền vào ô ghi chú, không phải ô sự cố.
             return finish(run, List.of(), startedNanos, null, "Không có bài viết nào để cập nhật");
         }
 
-        // Giao hết việc cho bể luồng rồi mới chờ: gọi .get() ngay trong vòng lặp thì hoá ra chạy tuần tự
         List<CompletableFuture<AccountCrawlResult>> futures = userIds.stream()
             .map(collector::collectForAccount)
             .toList();
@@ -113,7 +108,6 @@ public class SocialMetricsUpdateJob {
         return finish(run, collect(futures), startedNanos, null, null);
     }
 
-    // Gom kết quả, bỏ qua future nào chưa xong hoặc đã hỏng — phần đó đã được ghi log ở chỗ khác.
     private List<AccountCrawlResult> collect(List<CompletableFuture<AccountCrawlResult>> futures) {
         return futures.stream()
             .filter(future -> future.isDone() && !future.isCompletedExceptionally() && !future.isCancelled())
@@ -130,11 +124,9 @@ public class SocialMetricsUpdateJob {
         return crawlRunRepository.save(run);
     }
 
-    // problem: sự cố, có ảnh hưởng tới trạng thái.
     private CrawlRun finish(
         CrawlRun run, List<AccountCrawlResult> results, long startedNanos,
         String problem, String note) {
-
         int totalPosts = results.stream().mapToInt(AccountCrawlResult::totalPosts).sum();
         int succeeded = results.stream().mapToInt(AccountCrawlResult::succeeded).sum();
         int failed = results.stream().mapToInt(AccountCrawlResult::failed).sum();
@@ -155,11 +147,9 @@ public class SocialMetricsUpdateJob {
         return saved;
     }
 
-    // Đẩy dữ liệu mới xuống các dashboard đang mở.
     private void notifyDashboards(CrawlRun run, int succeeded) {
         try {
             broadcaster.crawlFinished(CrawlRunResponse.of(run));
-            // Không bài nào cập nhật được thì biểu đồ chẳng có gì mới để vẽ.
             if (succeeded > 0) {
                 broadcaster.chartUpdated(chartDataService.chartData(null, null));
             }
@@ -174,7 +164,6 @@ public class SocialMetricsUpdateJob {
             return CrawlStatus.FAILED;
         }
         if (problem != null || failed > 0) {
-            // Vài bài lỗi là chuyện thường của việc gọi API ngoài; không gọi cả lần chạy là hỏng.
             return succeeded == 0 && failed > 0 ? CrawlStatus.FAILED : CrawlStatus.PARTIAL;
         }
         return CrawlStatus.SUCCESS;

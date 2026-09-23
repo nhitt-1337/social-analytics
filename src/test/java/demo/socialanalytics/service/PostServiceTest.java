@@ -39,10 +39,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-// Unit test cho PostService: repository được thay bằng mock nên không cần DB, chạy trong mili giây.
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
-
     @Mock PostRepository postRepository;
     @Mock UserRepository userRepository;
     @Mock SocialMetricRepository metricRepository;
@@ -67,7 +65,6 @@ class PostServiceTest {
     @Nested
     @DisplayName("list()")
     class ListPosts {
-
         @Test
         void khongLocThiGoiFindAllVaTraVeThongTinPhanTrang() {
             Page<Post> page = new PageImpl<>(List.of(existingPost), PageRequest.of(0, 20), 1);
@@ -95,7 +92,6 @@ class PostServiceTest {
             verify(postRepository, never()).findAll(any(Pageable.class));
         }
 
-        // page đếm từ 1 ở API nhưng từ 0 ở Spring Data -> kiểm tra chỗ trừ 1 không bị lệch.
         @Test
         void doiSoTrangTu1VeTu0TruocKhiGoiRepository() {
             when(postRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
@@ -121,7 +117,6 @@ class PostServiceTest {
     @Nested
     @DisplayName("getById()")
     class GetById {
-
         @Test
         void kemTheoSoLieuCuaLanDoGanNhat() {
             SocialMetric latest = TestEntities.metric(99L, existingPost, 250, LocalDateTime.of(2026, 4, 1, 8, 0));
@@ -157,7 +152,6 @@ class PostServiceTest {
     @Nested
     @DisplayName("create()")
     class Create {
-
         @Test
         void luuBaiVietVoiDuLieuTuRequest() {
             when(postRepository.existsByPlatformAndExternalId(Platform.FACEBOOK, "fb-new")).thenReturn(false);
@@ -176,7 +170,6 @@ class PostServiceTest {
             assertThat(captor.getValue().getExternalId()).isEqualTo("fb-new");
             assertThat(captor.getValue().getUser()).isSameAs(owner);
             assertThat(result.id()).isEqualTo(55L);
-            // Bài vừa tạo chưa có lần đo nào -> không đi hỏi bảng metrics.
             assertThat(result.latestMetric()).isNull();
             verifyNoInteractions(metricRepository);
         }
@@ -208,7 +201,6 @@ class PostServiceTest {
     @Nested
     @DisplayName("update()")
     class Update {
-
         @Test
         void giuNguyenCapDinhDanhThiKhongCanKiemTraTrung() {
             when(postRepository.findWithUserById(10L)).thenReturn(Optional.of(existingPost));
@@ -219,9 +211,7 @@ class PostServiceTest {
                 new PostRequest(1L, "facebook", "fb-001", "Nội dung mới", "https://example.com/x", null));
 
             assertThat(result.content()).isEqualTo("Nội dung mới");
-            // Không đổi platform/externalId -> bỏ qua truy vấn kiểm tra trùng.
             verify(postRepository, never()).existsByPlatformAndExternalId(any(), any());
-            // Entity đang được quản lý bởi JPA nên update không cần gọi save().
             verify(postRepository, never()).save(any());
         }
 
@@ -260,7 +250,6 @@ class PostServiceTest {
     @Nested
     @DisplayName("delete()")
     class Delete {
-
         @Test
         void xoaBaiVietTimDuoc() {
             when(postRepository.findById(10L)).thenReturn(Optional.of(existingPost));

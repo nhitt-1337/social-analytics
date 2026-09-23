@@ -10,7 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface PlatformSummaryRepository extends JpaRepository<PlatformSummary, Long> {
-
     Optional<PlatformSummary> findByPlatform(Platform platform);
 
     List<PlatformSummary> findAllByOrderByPlatformAsc();

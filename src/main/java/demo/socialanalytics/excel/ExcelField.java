@@ -2,9 +2,7 @@ package demo.socialanalytics.excel;
 
 import java.lang.reflect.Field;
 
-// Một cột đã được "giải mã" từ annotation: giữ sẵn Field để đọc/ghi bằng Reflection.
 public record ExcelField(Field field, String header, int order, boolean required) {
-
     public Object read(Object target) {
         try {
             return field.get(target);

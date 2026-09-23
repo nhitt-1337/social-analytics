@@ -11,12 +11,9 @@ import demo.socialanalytics.repository.AuthorizedClientJpaRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Chỉ provider nào CÓ ĐỦ credential mới được đăng ký.
 class SocialLoginClientRegistrationsTest {
-
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class))
-        // Cấu hình này khai thêm bean lưu token cần repository JPA, thay bằng mock
         .withBean(AuthorizedClientJpaRepository.class,
             () -> org.mockito.Mockito.mock(AuthorizedClientJpaRepository.class))
         .withUserConfiguration(SocialLoginClientRegistrations.class);
@@ -34,7 +31,6 @@ class SocialLoginClientRegistrationsTest {
             assertThat(context).doesNotHaveBean(ClientRegistrationRepository.class));
     }
 
-    // Giá trị rỗng cũng phải coi như chưa cấu hình.
     @Test
     void giaTriRongCungCoiNhuChuaCauHinh() {
         runner.withPropertyValues(
@@ -67,7 +63,6 @@ class SocialLoginClientRegistrationsTest {
                 .containsExactlyInAnyOrder("facebook", "x"));
     }
 
-    // Có client id nhưng quên secret thì báo thẳng, đừng để người dùng ngồi đoán
     @Test
     void thieuSecretThiBaoLoiRoRang() {
         runner.withPropertyValues("social.login.facebook.client-id=fb-id")
@@ -80,7 +75,6 @@ class SocialLoginClientRegistrationsTest {
             });
     }
 
-    // Scope phải cấu hình được: Facebook chỉ cấp sẵn public_profile
     @Test
     void scopeCauHinhDuocQuaProperties() {
         runner.withPropertyValues(
@@ -117,7 +111,6 @@ class SocialLoginClientRegistrationsTest {
                     .isEqualTo("https://www.facebook.com/dialog/oauth");
                 assertThat(facebook.getProviderDetails().getTokenUri())
                     .doesNotContain("/v2.8/");
-                // Xin cả ảnh đại diện trong user-info thay vì tự ghép URL.
                 assertThat(facebook.getProviderDetails().getUserInfoEndpoint().getUri())
                     .contains("picture.type(large)");
             });

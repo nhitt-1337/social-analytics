@@ -4,7 +4,6 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-// Bao ngoài kết quả phân trang: { data, total, page, limit }. page là số trang đếm từ 1.
 public record PageResponse<T>(
     List<T> data,
     long total,

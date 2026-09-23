@@ -10,7 +10,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 // Chỉ gửi sau khi transaction commit, tránh listener đọc dữ liệu chưa thấy
 @Component
 public class ImportCompletedProducer {
-
     private static final Logger log = LoggerFactory.getLogger(ImportCompletedProducer.class);
 
     private final JmsTemplate jmsTemplate;

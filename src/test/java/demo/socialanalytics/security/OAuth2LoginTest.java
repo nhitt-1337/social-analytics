@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// Kiểm tra phần cấu hình Social Login
 @SpringBootTest(properties = {
     "social.login.facebook.client-id=test-fb-id",
     "social.login.facebook.client-secret=test-fb-secret",
@@ -24,7 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class OAuth2LoginTest {
-
     @Autowired MockMvc mvc;
     @Autowired ClientRegistrationRepository clientRegistrations;
 
@@ -34,8 +32,6 @@ class OAuth2LoginTest {
             .andExpect(status().is3xxRedirection())
             .andReturn().getResponse().getRedirectedUrl();
     }
-
-    // ----- cấu hình nhà cung cấp -----
 
     @Test
     void dungEndpointCuaFacebook() {
@@ -47,7 +43,6 @@ class OAuth2LoginTest {
         assertThat(facebook.getScopes()).contains("email", "public_profile");
     }
 
-    // Provider dựng sẵn của Spring Security trỏ vào Graph API v2.8 (bản từ 2016)
     @Test
     void khongBamVaoPhienBanGraphApi() {
         var provider = clientRegistrations.findByRegistrationId("facebook").getProviderDetails();
@@ -69,7 +64,6 @@ class OAuth2LoginTest {
         assertThat(userInfo.getUserNameAttributeName()).isEqualTo("id");
     }
 
-    // Twitter nay là X: hằng dựng sẵn của Spring Security trỏ sang x.com.
     @Test
     void dungEndpointCuaX() {
         ClientRegistration x = clientRegistrations.findByRegistrationId("x");
@@ -86,8 +80,6 @@ class OAuth2LoginTest {
         assertThat(clientRegistrations.findByRegistrationId("facebook").getRedirectUri())
             .isEqualTo("{baseUrl}/{action}/oauth2/code/{registrationId}");
     }
-
-    // ----- luồng chuyển hướng đi đăng nhập -----
 
     @Test
     void chuyenHuongSangFacebook() throws Exception {
@@ -108,7 +100,6 @@ class OAuth2LoginTest {
         assertThat(redirect).contains("scope=users.read");
     }
 
-    // Chạy trên cổng thật để đi qua chuỗi filter của Spring Security
     @Test
     void batPkceChoX() throws Exception {
         String redirect = authorizeRedirect("x");
@@ -122,7 +113,6 @@ class OAuth2LoginTest {
         assertThat(authorizeRedirect("facebook")).contains("code_challenge_method=S256");
     }
 
-    // Gõ nhầm registrationId thì KHÔNG chuyển hướng đi đâu cả.
     @Test
     void nhaCungCapChuaKhaiBaoThiKhongChuyenHuongDiDau() throws Exception {
         String path = "/oauth2/authorization/google";
@@ -130,8 +120,6 @@ class OAuth2LoginTest {
         mvc.perform(get("/api/v1" + path).contextPath("/api/v1").servletPath(path))
             .andExpect(status().isInternalServerError());
     }
-
-    // ----- trang đăng nhập -----
 
     @Test
     void trangDangNhapHienNutCuaCaHaiNhaCungCap() throws Exception {

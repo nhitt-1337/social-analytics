@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/metrics")
 public class MetricController {
-
     private final MetricService metricService;
 
     public MetricController(MetricService metricService) {

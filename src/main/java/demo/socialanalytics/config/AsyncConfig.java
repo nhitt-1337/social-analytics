@@ -17,13 +17,11 @@ import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
-// Mặc định @Scheduled chạy một luồng, @Async tạo luồng không giới hạn
 @Configuration
 @EnableAsync
 @EnableScheduling
 @EnableConfigurationProperties(CrawlProperties.class)
 public class AsyncConfig implements AsyncConfigurer {
-
     public static final String CRAWL_EXECUTOR = "socialCrawlExecutor";
 
     private static final Logger log = LoggerFactory.getLogger(AsyncConfig.class);
@@ -34,7 +32,6 @@ public class AsyncConfig implements AsyncConfigurer {
         this.properties = properties;
     }
 
-    // Bể luồng để crawl.
     @Bean(name = CRAWL_EXECUTOR)
     public ThreadPoolTaskExecutor socialCrawlExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -42,13 +39,10 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setMaxPoolSize(properties.poolSize());
         executor.setQueueCapacity(properties.queueCapacity());
 
-        // Tên luồng có tiền tố để đọc log biết ngay việc chạy ở đâu.
         executor.setThreadNamePrefix("crawl-");
 
-        // Hàng đợi đầy thì chạy ngay trên luồng gọi: job chậm lại nhưng không mất bài nào.
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 
-        // Tắt ứng dụng thì chờ việc đang chạy xong rồi mới dừng, tránh ghi dở dang vào DB.
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(30);
 
@@ -56,7 +50,6 @@ public class AsyncConfig implements AsyncConfigurer {
         return executor;
     }
 
-    // Bể riêng cho @Scheduled. Để mặc định thì mọi job dùng chung một luồng.
     @Bean
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();

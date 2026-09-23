@@ -17,17 +17,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 
-// Xuất Excel theo TÊN MODEL, dùng chung một đường đi cho mọi loại dữ liệu.
 @Service
 @Transactional(readOnly = true)
 public class ModelExportService {
-
     private static final int MAX_ROWS = 10_000;
 
     private final ModelExporter modelExporter;
     private final Map<String, ModelSource<?>> registry = new LinkedHashMap<>();
 
-    // Giữ kiểu và nguồn dữ liệu đi cùng nhau để không bị lệch.
     private record ModelSource<T>(Class<T> type, String sheetName, Supplier<List<T>> loader) {
     }
 
@@ -61,7 +58,6 @@ public class ModelExportService {
                 .stream().map(DeadLetterResponse::of).toList());
     }
 
-    // Dòng cho model "posts". Là record thường, KHÔNG gắn @ExcelColumn — cột do Reflection suy ra.
     public record PostSummaryRow(
         Long id,
         String platform,

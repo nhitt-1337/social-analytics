@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OpenApiConfig {
-
     @Bean
     public OpenAPI socialAnalyticsOpenApi() {
         return new OpenAPI().info(new Info()

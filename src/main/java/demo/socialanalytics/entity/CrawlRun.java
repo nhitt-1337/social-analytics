@@ -7,7 +7,6 @@ import lombok.Setter;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-// Lịch sử các lần chạy job cập nhật chỉ số.
 @Getter
 @Entity
 @Table(
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
     indexes = @Index(name = "idx_crawl_run_started_at", columnList = "started_at")
 )
 public class CrawlRun {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,12 +27,10 @@ public class CrawlRun {
     @Setter
     private LocalDateTime startedAt;
 
-    // Null khi lần chạy còn đang dở.
     @Column(name = "finished_at")
     @Setter
     private LocalDateTime finishedAt;
 
-    // Số tài khoản được xử lý song song trong lần chạy này.
     @Column(name = "total_accounts", nullable = false)
     @Setter
     private int totalAccounts;
@@ -51,7 +47,6 @@ public class CrawlRun {
     @Setter
     private int failedPosts;
 
-    // Lý do thất bại, hoặc tóm tắt khi chạy dở dang. Cắt ngắn để log dài không làm vỡ cột.
     @Column(length = 1000)
     @Setter
     private String message;

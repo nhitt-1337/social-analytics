@@ -24,10 +24,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-// Giả lập sẵn người dùng thay vì đi qua luồng OAuth2 thật
 @WithMockUser
 class PostControllerIntegrationTest {
-
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired PostRepository posts;
@@ -71,11 +69,9 @@ class PostControllerIntegrationTest {
             .andExpect(jsonPath("$.platform").value("facebook"))
             .andExpect(jsonPath("$.externalId").value("fb-001"))
             .andExpect(jsonPath("$.user.email").value("admin@example.com"))
-            // Bài mới chưa crawl lần nào -> chưa có số liệu.
             .andExpect(jsonPath("$.latestMetric").doesNotExist());
     }
 
-    // Cặp (platform, externalId) là duy nhất -> import lại cùng một bài không tạo bản ghi trùng.
     @Test
     void createDuplicateExternalIdReturns409() throws Exception {
         savePost(Platform.FACEBOOK, "fb-dup");
@@ -86,7 +82,6 @@ class PostControllerIntegrationTest {
             .andExpect(jsonPath("$.error.code").value("CONFLICT"));
     }
 
-    // Cùng externalId nhưng khác nền tảng thì hợp lệ.
     @Test
     void sameExternalIdOnAnotherPlatformIsAllowed() throws Exception {
         savePost(Platform.FACEBOOK, "same-id");

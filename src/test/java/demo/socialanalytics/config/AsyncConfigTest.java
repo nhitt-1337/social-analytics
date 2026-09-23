@@ -14,14 +14,12 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Mặc định @Scheduled chạy một luồng, @Async tạo luồng không giới hạn
 @SpringBootTest(properties = {
     "social.crawl.pool-size=4",
     "social.crawl.queue-capacity=10"
 })
 @ActiveProfiles("test")
 class AsyncConfigTest {
-
     @Autowired
     @Qualifier(AsyncConfig.CRAWL_EXECUTOR)
     ThreadPoolTaskExecutor crawlExecutor;
@@ -35,7 +33,6 @@ class AsyncConfigTest {
         assertThat(crawlExecutor.getThreadNamePrefix()).isEqualTo("crawl-");
     }
 
-    // Bể của @Scheduled phải có nhiều hơn một luồng, nếu không một job chậm sẽ chặn mọi job khác.
     @Test
     void beLuongLichChayCoNhieuHonMotLuong() {
         // getPoolSize() trả số luồng đang tồn tại, không phải cấu hình
@@ -53,7 +50,6 @@ class AsyncConfigTest {
             crawlExecutor.execute(() -> {
                 tatCaDaVao.countDown();
                 try {
-                    // Chỉ thoát ra khi cả 4 cùng vào được: chạy tuần tự thì treo ở đây.
                     tatCaDaVao.await(3, TimeUnit.SECONDS);
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
@@ -90,7 +86,6 @@ class AsyncConfigTest {
         var handler = config.getAsyncUncaughtExceptionHandler();
 
         assertThat(handler).isInstanceOf(AsyncConfig.LoggingAsyncExceptionHandler.class);
-        // Gọi thử: handler phải nuốt được lỗi và không tự ném ra tiếp.
         Method method = String.class.getMethod("length");
         handler.handleUncaughtException(new IllegalStateException("thử"), method, "tham-so");
     }

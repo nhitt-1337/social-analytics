@@ -19,12 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Xuất báo cáo bài viết kèm số liệu mới nhất ra file Excel.
 @Service
 @Transactional(readOnly = true)
 public class ReportExportService {
-
-    // Trần số dòng cho một lần xuất. Quá ngưỡng thì người dùng nên thu hẹp khoảng thời gian.
     public static final int MAX_EXPORT_ROWS = 10_000;
 
     private static final String SHEET_NAME = "Bao cao";
@@ -62,12 +59,10 @@ public class ReportExportService {
         return excelMapper.write(rows, PostReportRow.class, SHEET_NAME);
     }
 
-    // Tên file có mốc thời gian để tải nhiều lần không đè lên nhau.
     public String buildFileName() {
         return "bao-cao-tuong-tac-" + LocalDateTime.now().format(FILE_STAMP) + ".xlsx";
     }
 
-    // Một truy vấn cho tất cả bài
     private Map<Long, SocialMetric> loadLatestMetrics(List<Post> posts) {
         Map<Long, SocialMetric> latest = new HashMap<>();
         if (posts.isEmpty()) {
@@ -80,7 +75,6 @@ public class ReportExportService {
         return latest;
     }
 
-    // metric null khi bài chưa được crawl lần nào -> các cột chỉ số để trống thay vì ghi 0
     private PostReportRow toRow(Post post, SocialMetric metric) {
         return new PostReportRow(
             post.getId(),

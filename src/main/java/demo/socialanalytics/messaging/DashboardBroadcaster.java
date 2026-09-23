@@ -12,10 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-// Đẩy dữ liệu mới xuống các dashboard đang mở.
 @Component
 public class DashboardBroadcaster {
-
     private static final Logger log = LoggerFactory.getLogger(DashboardBroadcaster.class);
 
     private final SimpMessagingTemplate messagingTemplate;
@@ -24,7 +22,6 @@ public class DashboardBroadcaster {
         this.messagingTemplate = messagingTemplate;
     }
 
-    // Có chỉ số mới sau một lượt crawl -> gửi luôn dữ liệu biểu đồ đã tính sẵn.
     public void chartUpdated(ChartDataResponse chartData) {
         send(WebSocketConfig.TOPIC_CHART, chartData);
     }

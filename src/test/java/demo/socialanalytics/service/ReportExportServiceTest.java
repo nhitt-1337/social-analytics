@@ -26,10 +26,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-// Unit test cho luồng export
 @ExtendWith(MockitoExtension.class)
 class ReportExportServiceTest {
-
     @Mock PostRepository postRepository;
     @Mock SocialMetricRepository metricRepository;
 
@@ -67,7 +65,6 @@ class ReportExportServiceTest {
         assertThat(sheet).hasSize(2);
     }
 
-    // Repository trả về đã sắp giảm dần theo thời điểm đo; service phải lấy bản ĐẦU TIÊN.
     @Test
     void chonDungLanDoGanNhatKhiMotBaiCoNhieuLanDo() {
         Post post = TestEntities.post(10L, owner, Platform.FACEBOOK, "fb-001");
@@ -83,7 +80,6 @@ class ReportExportServiceTest {
         assertThat(sheet.get(1).get(8)).isEqualTo("900");
     }
 
-    // Bài chưa crawl lần nào -> ô chỉ số để TRỐNG, không ghi 0, tránh nhầm "chưa đo" với "đo được 0".
     @Test
     void baiChuaCoLanDoNaoThiDeTrongCacCotChiSo() {
         Post post = TestEntities.post(10L, owner, Platform.TWITTER, "tw-001");
@@ -92,7 +88,6 @@ class ReportExportServiceTest {
 
         List<List<String>> sheet = ExcelTestFiles.readAll(exportService.exportReport(null, null, null));
 
-        // Cột 8..12 là likes, shares, comments, followers, collectedAt.
         assertThat(sheet.get(1).subList(8, 13)).containsOnly("");
     }
 
@@ -137,11 +132,9 @@ class ReportExportServiceTest {
 
         assertThat(sheet).hasSize(1);
         assertThat(sheet.get(0)).first().isEqualTo("ID");
-        // Không có bài nào thì khỏi đi hỏi bảng metrics.
         verifyNoInteractions(metricRepository);
     }
 
-    // Chỉ MỘT truy vấn metrics cho toàn bộ báo cáo, không phải mỗi bài một truy vấn.
     @Test
     void layChiSoCuaMoiBai() {
         List<Post> posts = List.of(

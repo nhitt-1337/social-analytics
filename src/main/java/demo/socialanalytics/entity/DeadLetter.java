@@ -6,7 +6,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Message đã thử lại hết số lần cho phép mà vẫn hỏng, bị broker đẩy sang DLQ.
 @Getter
 @Entity
 @Table(
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
     indexes = @Index(name = "idx_dead_letter_received_at", columnList = "received_at")
 )
 public class DeadLetter {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,12 +25,10 @@ public class DeadLetter {
     @Setter
     private String messageId;
 
-    // Nội dung gốc, giữ nguyên để có thể gửi lại sau khi đã sửa nguyên nhân.
     @Column(nullable = false, columnDefinition = "text")
     @Setter
     private String payload;
 
-    // Lý do broker bỏ cuộc, do chính broker ghi vào message.
     @Column(name = "failure_cause", length = 2100)
     @Setter
     private String failureCause;

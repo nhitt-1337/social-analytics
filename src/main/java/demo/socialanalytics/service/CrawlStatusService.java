@@ -11,14 +11,12 @@ import java.util.Optional;
 @Service
 @Transactional(readOnly = true)
 public class CrawlStatusService {
-
     private final CrawlRunRepository crawlRunRepository;
 
     public CrawlStatusService(CrawlRunRepository crawlRunRepository) {
         this.crawlRunRepository = crawlRunRepository;
     }
 
-    // Rỗng khi job chưa chạy lần nào.
     public Optional<CrawlRunResponse> lastRun() {
         return crawlRunRepository.findFirstByOrderByStartedAtDescIdDesc().map(CrawlRunResponse::of);
     }

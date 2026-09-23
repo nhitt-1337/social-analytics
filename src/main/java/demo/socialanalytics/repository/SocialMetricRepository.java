@@ -15,14 +15,11 @@ import java.util.Optional;
 
 @Repository
 public interface SocialMetricRepository extends JpaRepository<SocialMetric, Long> {
-
     Page<SocialMetric> findByPostId(Long postId, Pageable pageable);
 
-    // Chuỗi thời gian cho biểu đồ Chart.js ở bước sau.
     List<SocialMetric> findByPostIdAndCollectedAtBetweenOrderByCollectedAtAsc(
         Long postId, LocalDateTime from, LocalDateTime to);
 
-    // Lần đo gần nhất của một bài — số liệu hiển thị trên thẻ tổng quan.
     Optional<SocialMetric> findFirstByPostIdOrderByCollectedAtDescIdDesc(Long postId);
 
     // Alias metric_day vì 'day' là từ khoá của H2

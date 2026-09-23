@@ -12,12 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// Controller mỏng: nhận request, @Valid, gọi service. Không chứa truy vấn DB.
 @Tag(name = "Posts", description = "Quản lý bài viết cần theo dõi tương tác")
 @RestController
 @RequestMapping("/posts")
 public class PostController {
-
     private final PostService postService;
 
     public PostController(PostService postService) {

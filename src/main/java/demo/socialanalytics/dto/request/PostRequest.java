@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
-// Body tạo/cập nhật bài viết.
 public record PostRequest(
     @NotNull(message = "userId không được để trống")
     Long userId,

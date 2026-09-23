@@ -24,10 +24,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-// Phần điều phối: chia việc, chờ, tổng hợp, ghi lịch sử.
 @ExtendWith(MockitoExtension.class)
 class SocialMetricsUpdateJobTest {
-
     @Mock PostRepository postRepository;
     @Mock CrawlRunRepository crawlRunRepository;
     @Mock SocialMetricsCollector collector;
@@ -48,7 +46,6 @@ class SocialMetricsUpdateJobTest {
     @BeforeEach
     void setUp() {
         job = newJob(30);
-        // save() trả lại chính entity được truyền vào, như JPA thật.
         lenient().when(crawlRunRepository.save(any(CrawlRun.class))).thenAnswer(invocation -> {
             CrawlRun run = invocation.getArgument(0);
             if (run.getId() == null) {
@@ -81,7 +78,6 @@ class SocialMetricsUpdateJobTest {
         verify(collector).collectForAccount(2L);
     }
 
-    // Vài bài lỗi là chuyện thường của việc gọi API ngoài -> PARTIAL, không phải FAILED.
     @Test
     void motSoBaiLoiThiTrangThaiLaPartial() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -101,7 +97,6 @@ class SocialMetricsUpdateJobTest {
         assertThat(job.runOnce().getStatus()).isEqualTo(CrawlStatus.FAILED);
     }
 
-    // Crawl xong có chỉ số mới -> đẩy xuống dashboard đang mở.
     @Test
     void phatTinRealtimeSauKhiCrawlXong() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -114,7 +109,6 @@ class SocialMetricsUpdateJobTest {
         verify(broadcaster).chartUpdated(any());
     }
 
-    // Không bài nào cập nhật được thì khỏi phát tin và khỏi tính lại biểu đồ
     @Test
     void khongCoBaiNaoThanhCongThiKhongPhat() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -127,7 +121,6 @@ class SocialMetricsUpdateJobTest {
         verifyNoInteractions(chartDataService);
     }
 
-    // Lỗi khi phát tin realtime KHÔNG được làm hỏng kết quả lần crawl.
     @Test
     void loiPhatTinKhongLamHongCrawl() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -150,7 +143,6 @@ class SocialMetricsUpdateJobTest {
         verifyNoInteractions(collector);
     }
 
-    // Ghi RUNNING trước rồi cập nhật khi xong, để dashboard thấy job đang chạy
     @Test
     void ghiTrangThaiRunningTruocRoiCapNhatSau() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -158,11 +150,9 @@ class SocialMetricsUpdateJobTest {
 
         job.runOnce();
 
-        // save() gọi hai lần trên cùng một bản ghi: lúc bắt đầu và lúc kết thúc.
         verify(crawlRunRepository, times(2)).save(any(CrawlRun.class));
     }
 
-    // Đây là điểm mấu chốt của đa luồng: phải GIAO HẾT việc rồi mới chờ
     @Test
     void giaoHetViecRoiMoiCho() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L, 2L, 3L, 4L));
@@ -179,7 +169,6 @@ class SocialMetricsUpdateJobTest {
                 dinhCaoDongThoi.accumulateAndGet(hienTai, Math::max);
                 tatCaDaVao.countDown();
                 try {
-                    // Không thoát ra cho tới khi cả 4 tác vụ cùng vào được đây
                     tatCaDaVao.await(2, TimeUnit.SECONDS);
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
@@ -196,7 +185,6 @@ class SocialMetricsUpdateJobTest {
         assertThat(run.getSucceededPosts()).isEqualTo(4);
     }
 
-    // Lần chạy thứ hai bị bỏ khi lần đầu chưa xong
     @Test
     void khongChayChongLenNhau() throws Exception {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -225,7 +213,6 @@ class SocialMetricsUpdateJobTest {
         assertThat(bikBoQua).isNull();
     }
 
-    // Quá hạn thì bỏ dở phần còn lại và vẫn ghi lại lần chạy, thay vì treo mãi.
     @Test
     void quaThoiGianThiBoDo() {
         job = newJob(1);

@@ -37,7 +37,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MetricServiceTest {
-
     @Mock SocialMetricRepository metricRepository;
     @Mock PostRepository postRepository;
 
@@ -55,7 +54,6 @@ class MetricServiceTest {
     @Nested
     @DisplayName("listByPost()")
     class ListByPost {
-
         @Test
         void traVeLichSuDoSapMoiNhatTruoc() {
             SocialMetric metric = TestEntities.metric(1L, post, 100, LocalDateTime.of(2026, 4, 1, 10, 0));
@@ -74,7 +72,6 @@ class MetricServiceTest {
             assertThat(captor.getValue().getSort().getOrderFor("collectedAt").isDescending()).isTrue();
         }
 
-        // Kiểm tra bài viết tồn tại TRƯỚC, để 404 chứ không trả danh sách rỗng gây hiểu nhầm.
         @Test
         void baiVietKhongTonTai() {
             when(postRepository.existsById(404L)).thenReturn(false);
@@ -90,7 +87,6 @@ class MetricServiceTest {
     @Nested
     @DisplayName("timeSeries()")
     class TimeSeries {
-
         @Test
         void dungDungKhoangThoiGianNguoiDungTruyen() {
             LocalDateTime from = LocalDateTime.of(2026, 1, 1, 0, 0);
@@ -105,7 +101,6 @@ class MetricServiceTest {
             verify(metricRepository).findByPostIdAndCollectedAtBetweenOrderByCollectedAtAsc(10L, from, to);
         }
 
-        // Bỏ trống from/to -> mặc định 30 ngày gần nhất.
         @Test
         void boTrongThiLay30NgayGanNhat() {
             when(postRepository.existsById(10L)).thenReturn(true);
@@ -125,7 +120,6 @@ class MetricServiceTest {
                 .isEqualTo(30);
         }
 
-        // Chỉ truyền from -> to mặc định là bây giờ.
         @Test
         void chiTruyenFromThiToLaHienTai() {
             LocalDateTime from = LocalDateTime.of(2026, 1, 1, 0, 0);
@@ -154,7 +148,6 @@ class MetricServiceTest {
     @Nested
     @DisplayName("record() — background job crawl gọi vào đây")
     class Record {
-
         @Test
         void luuLanDoVoiDuLieuTuRequest() {
             LocalDateTime collectedAt = LocalDateTime.of(2026, 4, 2, 7, 0);
@@ -209,7 +202,6 @@ class MetricServiceTest {
     @Nested
     @DisplayName("getById() và delete()")
     class GetAndDelete {
-
         @Test
         void getByIdTraVeLanDoTimDuoc() {
             SocialMetric metric = TestEntities.metric(7L, post, 88, LocalDateTime.of(2026, 4, 1, 9, 0));

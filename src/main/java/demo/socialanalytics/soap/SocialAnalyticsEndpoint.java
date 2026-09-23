@@ -15,10 +15,8 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import java.time.LocalDateTime;
 
-// Endpoint SOAP.
 @Endpoint
 public class SocialAnalyticsEndpoint {
-
     private static final Logger log = LoggerFactory.getLogger(SocialAnalyticsEndpoint.class);
 
     private final StatisticsService statisticsService;
@@ -34,7 +32,6 @@ public class SocialAnalyticsEndpoint {
     @ResponsePayload
     public GetPlatformSummaryResponse getPlatformSummary(
         @RequestPayload GetPlatformSummaryRequest request) {
-
         Platform filter = PlatformParser.parse(request.getPlatform());
         log.info("SOAP getPlatformSummary, lọc theo {}", filter == null ? "tất cả" : filter);
 
@@ -47,7 +44,6 @@ public class SocialAnalyticsEndpoint {
         return response;
     }
 
-    // Dịch vụ tỷ giá giả lập
     @PayloadRoot(namespace = WebServiceConfig.NAMESPACE, localPart = "getExchangeRateRequest")
     @ResponsePayload
     public GetExchangeRateResponse getExchangeRate(@RequestPayload GetExchangeRateRequest request) {

@@ -12,11 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// Bọc lời gọi SOAP thành REST cho dashboard dùng — trình duyệt gọi REST dễ hơn SOAP nhiều.
 @Tag(name = "Exchange rate", description = "Tỷ giá, lấy qua WebService SOAP")
 @RestController
 public class ExchangeRateController {
-
     private final ExchangeRateClient exchangeRateClient;
 
     public ExchangeRateController(ExchangeRateClient exchangeRateClient) {

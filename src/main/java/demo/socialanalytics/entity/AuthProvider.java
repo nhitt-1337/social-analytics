@@ -2,7 +2,6 @@ package demo.socialanalytics.entity;
 
 import java.util.Locale;
 
-// Nguồn xác thực của tài khoản. LOCAL dành cho admin tạo sẵn; FACEBOOK/TWITTER là Social Login.
 public enum AuthProvider {
     LOCAL,
     FACEBOOK,
@@ -12,7 +11,6 @@ public enum AuthProvider {
         return name().toLowerCase(Locale.ROOT);
     }
 
-    // Đổi registrationId trong cấu hình OAuth2 sang enum.
     public static AuthProvider fromRegistrationId(String registrationId) {
         if (registrationId == null) {
             throw new IllegalArgumentException("registrationId không được null");

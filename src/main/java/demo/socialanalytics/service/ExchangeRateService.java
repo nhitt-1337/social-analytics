@@ -9,11 +9,8 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
 
-// Nguồn tỷ giá GIẢ LẬP, đóng vai nhà cung cấp SOAP bên ngoài.
 @Service
 public class ExchangeRateService {
-
-    // Tỷ giá quy về USD, đủ để suy ra mọi cặp.
     private static final Map<String, BigDecimal> PER_USD = Map.of(
         "USD", new BigDecimal("1"),
         "VND", new BigDecimal("25400"),
@@ -29,7 +26,6 @@ public class ExchangeRateService {
         BigDecimal sourcePerUsd = rateOf(source);
         BigDecimal targetPerUsd = rateOf(target);
 
-        // Quy về USD rồi đổi sang đích.
         BigDecimal rate = targetPerUsd.divide(sourcePerUsd, 6, java.math.RoundingMode.HALF_UP);
 
         GetExchangeRateResponse response = new GetExchangeRateResponse();

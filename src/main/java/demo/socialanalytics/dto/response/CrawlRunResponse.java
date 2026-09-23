@@ -4,7 +4,6 @@ import demo.socialanalytics.entity.CrawlRun;
 
 import java.time.LocalDateTime;
 
-// Một lần chạy job, dạng trả ra ngoài. Nguồn cho ô "Last updated time" trên dashboard.
 public record CrawlRunResponse(
     Long id,
     String status,

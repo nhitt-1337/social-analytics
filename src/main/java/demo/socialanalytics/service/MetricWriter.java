@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 // @Transactional chỉ có tác dụng khi gọi từ bên ngoài qua proxy
 @Service
 public class MetricWriter {
-
     private final SocialMetricRepository metricRepository;
     private final PostRepository postRepository;
 
@@ -25,7 +24,6 @@ public class MetricWriter {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public SocialMetric record(Long postId, SocialMetricsSnapshot snapshot, LocalDateTime collectedAt) {
         SocialMetric metric = new SocialMetric();
-        // getReferenceById: chỉ cần khoá ngoại, không cần nạp lại cả bài viết từ DB.
         metric.setPost(postRepository.getReferenceById(postId));
         metric.setLikes(snapshot.likes());
         metric.setShares(snapshot.shares());

@@ -11,10 +11,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 
-// Đổi giá trị một ô Excel sang kiểu Java của field đích.
 final class ExcelCellConverter {
-
-    // Người dùng thường gõ tay ngày tháng nên chấp nhận vài định dạng quen thuộc
     private static final List<DateTimeFormatter> DATE_TIME_FORMATS = List.of(
         DateTimeFormatter.ISO_LOCAL_DATE_TIME,
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
@@ -31,7 +28,6 @@ final class ExcelCellConverter {
     private ExcelCellConverter() {
     }
 
-    // Trả về null khi ô trống; ExcelMapper sẽ quyết định null có hợp lệ hay không (required).
     static Object convert(Cell cell, Class<?> targetType, String header) {
         String raw = asText(cell);
         if (raw == null || raw.isBlank()) {
@@ -65,7 +61,6 @@ final class ExcelCellConverter {
             "ExcelMapper chưa hỗ trợ kiểu " + targetType.getSimpleName() + " (cột '" + header + "')");
     }
 
-    // Đọc ô về dạng chuỗi, chấp nhận cả ô số/ngày/công thức.
     private static String asText(Cell cell) {
         if (cell == null) {
             return null;
@@ -79,7 +74,6 @@ final class ExcelCellConverter {
                     yield cell.getLocalDateTimeCellValue().toString();
                 }
                 double number = cell.getNumericCellValue();
-                // Excel lưu mọi số dưới dạng double; id/lượt like là số nguyên nên bỏ đuôi ".0".
                 yield number == Math.floor(number) && !Double.isInfinite(number)
                     ? String.valueOf((long) number)
                     : String.valueOf(number);
@@ -116,7 +110,6 @@ final class ExcelCellConverter {
     }
 
     private static LocalDateTime parseDateTime(Cell cell, String value, String header) {
-        // Ô được Excel định dạng ngày: lấy thẳng, khỏi đoán định dạng chuỗi.
         if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
             return cell.getLocalDateTimeCellValue();
         }
@@ -124,14 +117,12 @@ final class ExcelCellConverter {
             try {
                 return LocalDateTime.parse(value, formatter);
             } catch (DateTimeParseException ignored) {
-                // thử định dạng kế tiếp
             }
         }
         for (DateTimeFormatter formatter : DATE_FORMATS) {
             try {
                 return LocalDate.parse(value, formatter).atStartOfDay();
             } catch (DateTimeParseException ignored) {
-                // thử định dạng kế tiếp
             }
         }
         throw new ExcelCellException("cột '" + header + "' phải là ngày giờ (vd 2026-01-31 08:30 hoặc 31/01/2026)"

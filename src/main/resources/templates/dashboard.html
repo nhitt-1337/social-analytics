@@ -95,7 +95,6 @@
     <div th:if="${lastRun != null}">
         <p class="stat">
             <span class="muted">Cập nhật lần cuối</span><br>
-            <!-- id để JavaScript cập nhật tại chỗ khi nhận tin qua WebSocket -->
             <strong id="lastRunTime"
                     th:text="${#temporals.format(lastRun.startedAt, 'HH:mm:ss dd/MM/yyyy')}">--</strong>
             <span id="lastRunStatus" class="badge"
@@ -141,8 +140,6 @@
     <button class="btn" type="button" onclick="demoApiCall()">POST /api/v1/posts (thiếu dữ liệu)</button>
     <pre id="apiResult" class="result"></pre>
 </main>
-
-<!-- Tải từ CDN: không có mạng thì biểu đồ không hiện -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>

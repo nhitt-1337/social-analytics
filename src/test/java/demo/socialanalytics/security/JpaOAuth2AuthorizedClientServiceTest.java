@@ -23,11 +23,9 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Chạy trên cổng thật để đi qua chuỗi filter của Spring Security
 @DataJpaTest
 @ActiveProfiles("test")
 class JpaOAuth2AuthorizedClientServiceTest {
-
     @Autowired AuthorizedClientJpaRepository repository;
 
     JpaOAuth2AuthorizedClientService service;
@@ -82,7 +80,6 @@ class JpaOAuth2AuthorizedClientServiceTest {
             .isEqualTo(saved.getAccessToken().getExpiresAt());
     }
 
-    // Đăng nhập lại phải GHI ĐÈ chứ không tạo thêm dòng mới.
     @Test
     void dangNhapLaiThiGhiDeTokenCu() {
         service.saveAuthorizedClient(authorizedClient("token-cu", "refresh-cu"), principal);
@@ -93,7 +90,6 @@ class JpaOAuth2AuthorizedClientServiceTest {
         assertThat(loaded.getAccessToken().getTokenValue()).isEqualTo("token-moi");
     }
 
-    // Nhà cung cấp thường chỉ gửi refresh token ở lần cấp quyền đầu tiên
     @Test
     void khongNhanDuocRefreshTokenMoiThiGiuBanCu() {
         service.saveAuthorizedClient(authorizedClient("token-cu", "refresh-cu"), principal);
@@ -130,7 +126,6 @@ class JpaOAuth2AuthorizedClientServiceTest {
         assertThat(repository.findAll()).isEmpty();
     }
 
-    // Hai người dùng khác nhau trên cùng một nhà cung cấp là hai dòng riêng biệt.
     @Test
     void tachBachTokenGiuaCacNguoiDung() {
         Authentication other = new UsernamePasswordAuthenticationToken("facebook:456", "n/a", List.of());

@@ -21,7 +21,6 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-// Thử lại và hàng đợi thư chết.
 @SpringBootTest(properties = {
     "social.messaging.max-redeliveries=3",
     "social.messaging.initial-redelivery-delay-ms=50",
@@ -29,7 +28,6 @@ import static org.mockito.Mockito.*;
 })
 @ActiveProfiles("test")
 class RetryAndDeadLetterTest {
-
     @Autowired JmsTemplate jmsTemplate;
     @Autowired DeadLetterRepository deadLetters;
 
@@ -54,7 +52,6 @@ class RetryAndDeadLetterTest {
         });
     }
 
-    // Tổng 4 lần xử lý: lần đầu + 3 lần giao lại.
     @Test
     void nemLoiThiDuocGiaoLai() {
         alwaysFail();
@@ -76,20 +73,16 @@ class RetryAndDeadLetterTest {
 
         List<DeadLetter> recorded = deadLetters.findAll();
         assertThat(recorded).singleElement().satisfies(letter -> {
-            // Giữ được hàng đợi GỐC để biết message hỏng đến từ đâu.
             assertThat(letter.getSourceQueue()).contains(Queues.IMPORT_COMPLETED);
-            // Nội dung gốc còn nguyên -> sửa xong nguyên nhân thì gửi lại được.
             assertThat(letter.getPayload()).contains("\"imported\":3");
             assertThat(letter.getMessageId()).isNotBlank();
             assertThat(letter.getReceivedAt()).isNotNull();
-            // Lý do do chính broker ghi: cho biết đã giao mấy lần và chính sách nào đang áp dụng.
             assertThat(letter.getFailureCause())
                 .contains("Delivery[4]")
                 .contains("exceeds redelivery policy limit");
         });
     }
 
-    // Lỗi tạm thời: lần đầu hỏng, lần giao lại thành công -> KHÔNG được vào DLQ
     @Test
     void loiTamThoiThiThuLaiThanhCong() {
         when(statisticsService.refresh()).thenAnswer(invocation -> {
@@ -104,7 +97,6 @@ class RetryAndDeadLetterTest {
         await().atMost(ofSeconds(15)).untilAsserted(() ->
             assertThat(attempts.get()).isEqualTo(2));
 
-        // Chờ thêm để chắc chắn không có message nào lọt vào DLQ muộn.
         await().during(ofSeconds(2)).atMost(ofSeconds(6))
             .untilAsserted(() -> assertThat(deadLetters.findAll()).isEmpty());
         verify(statisticsService, times(2)).refresh();

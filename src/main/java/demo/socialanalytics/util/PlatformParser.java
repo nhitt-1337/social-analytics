@@ -6,9 +6,7 @@ import demo.socialanalytics.exception.InvalidRequestParameterException;
 import java.util.Arrays;
 import java.util.Locale;
 
-// Chuyển chuỗi client gửi ("facebook") thành enum Platform, không phân biệt hoa thường.
 public final class PlatformParser {
-
     private PlatformParser() {
     }
 

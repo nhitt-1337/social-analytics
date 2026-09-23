@@ -29,10 +29,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-// Nhập danh sách bài viết từ file Excel.
 @Service
 public class PostImportService {
-
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".xlsx", ".xls");
 
     private final PostRepository postRepository;
@@ -56,7 +54,6 @@ public class PostImportService {
     public ImportResultResponse importPosts(MultipartFile file, Long userId) {
         requireExcelFile(file);
 
-        // Chủ sở hữu của toàn bộ bài trong file.
         User owner = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("người dùng"));
 
@@ -73,7 +70,6 @@ public class PostImportService {
 
         for (ExcelRow<PostImportRow> entry : rows) {
             PostImportRow row = entry.value();
-            // Lấy số dòng do ExcelMapper ghi lại
             int rowNumber = entry.rowNumber();
             String key = key(row);
 
@@ -95,7 +91,6 @@ public class PostImportService {
             result.totalRows() - toSave.size(),
             List.copyOf(errors));
 
-        // Phát sự kiện nội bộ; producer mới đẩy lên hàng đợi, và chỉ sau khi commit
         eventPublisher.publishEvent(new ImportCompletedEvent(new ImportCompletedMessage(
             userId, response.totalRows(), response.imported(), response.skipped(),
             LocalDateTime.now())));
@@ -111,7 +106,6 @@ public class PostImportService {
         }
     }
 
-    // Một truy vấn duy nhất cho cả file.
     private Set<String> loadExistingKeys(List<PostImportRow> rows) {
         if (rows.isEmpty()) {
             return new HashSet<>();

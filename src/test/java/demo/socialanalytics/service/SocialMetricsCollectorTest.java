@@ -23,10 +23,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-// Nuốt lỗi thì mất dấu, để lỗi thoát ra thì một bài hỏng kéo sập cả tài khoản
 @ExtendWith(MockitoExtension.class)
 class SocialMetricsCollectorTest {
-
     @Mock PostRepository postRepository;
     @Mock SocialApiClient socialApiClient;
     @Mock MetricWriter metricWriter;
@@ -79,7 +77,6 @@ class SocialMetricsCollectorTest {
         assertThat(captured.getValue().followers()).isEqualTo(9_000);
     }
 
-    // Bài thứ hai lỗi thì bài thứ ba VẪN phải được crawl.
     @Test
     void motBaiLoiKhongDungCaTaiKhoan() throws Exception {
         when(postRepository.findByUserIdOrderByIdAsc(1L))
@@ -98,13 +95,11 @@ class SocialMetricsCollectorTest {
         verify(metricWriter, times(2)).record(anyLong(), any(), any());
     }
 
-    // Lỗi khi GHI DB cũng phải được bắt, không chỉ lỗi gọi API.
     @Test
     void loiGhiDatabaseTinhLaThatBai() throws Exception {
         when(postRepository.findByUserIdOrderByIdAsc(1L))
             .thenReturn(List.of(post(10L, "fb-1"), post(11L, "fb-2")));
         when(socialApiClient.fetchMetrics(any())).thenReturn(snapshot(100));
-        // record() trả về SocialMetric nên dùng doReturn cho lần gọi thứ hai, không phải doNothing.
         doThrow(new RuntimeException("mất kết nối DB"))
             .doReturn(null)
             .when(metricWriter).record(anyLong(), any(), any());

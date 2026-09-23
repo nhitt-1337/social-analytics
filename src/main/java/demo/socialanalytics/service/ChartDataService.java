@@ -18,9 +18,7 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 public class ChartDataService {
-
     public static final int DEFAULT_DAYS = 7;
-    // Trần để một lời gọi không kéo về hàng nghìn điểm — biểu đồ cũng không đọc nổi.
     public static final int MAX_DAYS = 90;
 
     private final SocialMetricRepository metricRepository;
@@ -37,7 +35,6 @@ public class ChartDataService {
         Platform parsed = PlatformParser.parse(platform);
         LocalDateTime from = LocalDate.now().minusDays(window - 1L).atStartOfDay();
 
-        // Native query nên phải truyền enum dưới dạng chuỗi.
         List<Object[]> rows = metricRepository.sumDailyTotals(
             from, parsed == null ? null : parsed.name());
 
@@ -73,7 +70,6 @@ public class ChartDataService {
         return days;
     }
 
-    // Kiểu trả về của cột ngày khác nhau giữa các driver (java.sql.Date
     private LocalDate toLocalDate(Object value) {
         return switch (value) {
             case LocalDate date -> date;

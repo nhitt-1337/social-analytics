@@ -14,13 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-// Trực DLQ: message nào thử lại hết số lần vẫn hỏng thì ghi lại xuống DB.
 @Component
 public class DeadLetterListener {
-
     private static final Logger log = LoggerFactory.getLogger(DeadLetterListener.class);
 
-    // Cột payload là text nhưng vẫn cắt bớt: message khổng lồ không có ích gì cho việc chẩn đoán.
     private static final int MAX_PAYLOAD = 10_000;
     private static final int MAX_CAUSE = 2_000;
 
@@ -45,12 +42,10 @@ public class DeadLetterListener {
             record.getSourceQueue(), record.getFailureCause(), record.getPayload());
     }
 
-    // Hàng đợi GỐC của message — thứ cần nhất khi chẩn đoán, vì DLQ dùng chung cho mọi hàng đợi.
     private String originalQueue(Message message) {
         if (message instanceof ActiveMQMessage activeMq && activeMq.getOriginalDestination() != null) {
             return activeMq.getOriginalDestination().getPhysicalName();
         }
-        // Một số cấu hình broker có đặt property này; thử nốt trước khi bỏ cuộc.
         try {
             String original = message.getStringProperty("originalDestination");
             return original != null ? original : Queues.DEAD_LETTER;

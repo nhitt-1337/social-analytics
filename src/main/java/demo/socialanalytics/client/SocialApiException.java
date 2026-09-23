@@ -1,6 +1,5 @@
 package demo.socialanalytics.client;
 
-// Gọi API nhà cung cấp thất bại (mạng lỗi, hết hạn token, bị giới hạn tần suất...).
 public class SocialApiException extends RuntimeException {
     public SocialApiException(String message) {
         super(message);

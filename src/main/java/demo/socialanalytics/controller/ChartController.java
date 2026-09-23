@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Chart", description = "Dữ liệu tổng hợp cho biểu đồ")
 @RestController
 public class ChartController {
-
     private final ChartDataService chartDataService;
 
     public ChartController(ChartDataService chartDataService) {

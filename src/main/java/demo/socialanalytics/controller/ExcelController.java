@@ -21,11 +21,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
-// Nhập/xuất Excel. Controller mỏng như các controller khác: không đụng POI, không truy vấn DB.
 @Tag(name = "Excel", description = "Nhập bài viết từ Excel và xuất báo cáo tương tác")
 @RestController
 public class ExcelController {
-
     private static final MediaType XLSX =
         MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
@@ -52,7 +50,6 @@ public class ExcelController {
         return ResponseEntity.ok(postImportService.importPosts(file, resolveOwner(userId, principal)));
     }
 
-    // Bỏ trống userId thì lấy người đang đăng nhập, để form trên dashboard không phải hỏi id.
     private Long resolveOwner(Long userId, OAuth2User principal) {
         if (userId != null) {
             return userId;

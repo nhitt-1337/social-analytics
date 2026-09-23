@@ -17,11 +17,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.ws.test.client.RequestMatchers.*;
 import static org.springframework.ws.test.client.ResponseCreators.*;
 
-// MockWebServiceServer chặn dưới tầng HTTP: kiểm được XML mà không cần mở cổng
 @SpringBootTest
 @ActiveProfiles("test")
 class ExchangeRateClientTest {
-
     private static final String NS = "http://demo/socialanalytics/ws";
 
     @Autowired ExchangeRateClient client;
@@ -62,7 +60,6 @@ class ExchangeRateClientTest {
         server.verify();
     }
 
-    // Nhà cung cấp trả SOAP Fault = lỗi NGHIỆP VỤ
     @Test
     void soapFaultGiuNguyenThongDiep() throws Exception {
         server.expect(anything())
@@ -82,7 +79,6 @@ class ExchangeRateClientTest {
             .hasMessageContaining("Không kết nối được");
     }
 
-    // Namespace sai một chữ là cả hợp đồng SOAP hỏng — kiểm tra nó được gửi đúng.
     @Test
     void guiDungNamespaceTheoHopDong() throws Exception {
         server.expect(soapEnvelope(xml("""

@@ -3,7 +3,6 @@ package demo.socialanalytics.dto.request;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
-// Tham số phân trang dùng chung: ?page=&limit= (page đếm từ 1, limit có trần).
 public record PageQuery(
     @Min(value = 1, message = "page phải lớn hơn hoặc bằng 1")
     Integer page,

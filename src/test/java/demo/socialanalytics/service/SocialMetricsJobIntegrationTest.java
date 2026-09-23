@@ -20,10 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Chạy job thật: qua ThreadPoolTaskExecutor thật, ghi vào DB thật (H2).
 @SpringBootTest(properties = {
     "social.crawl.enabled=true",
-    // Lịch tự động lùi thật xa: test tự gọi runOnce(), không muốn job tự chạy chen vào.
     "social.crawl.initial-delay=PT24H",
     "social.crawl.pool-size=4",
     "social.crawl.mock.latency-ms=0",
@@ -32,11 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @Import(SocialMetricsJobIntegrationTest.ThreadRecordingClient.class)
 class SocialMetricsJobIntegrationTest {
-
-    // Tên các luồng đã thực sự gọi API, ghi lại để kiểm tra phần chạy song song.
     static final Set<String> crawlThreadNames = ConcurrentHashMap.newKeySet();
 
-    // Thay client giả lập mặc định bằng bản có ghi lại tên luồng
     @TestConfiguration
     static class ThreadRecordingClient {
         @Bean
@@ -98,7 +93,6 @@ class SocialMetricsJobIntegrationTest {
         });
     }
 
-    // Chạy hai lần thì mỗi bài có hai dòng lịch sử — chỉ số lưu theo chuỗi thời gian, không ghi đè.
     @Test
     void chayNhieuLanThiCongDonLichSuChuKhongGhiDe() {
         User owner = saveUser("a@example.com");
@@ -111,7 +105,6 @@ class SocialMetricsJobIntegrationTest {
         assertThat(crawlRuns.findAll()).hasSize(2);
     }
 
-    // Nhiều tài khoản phải được xử lý trên NHIỀU luồng khác nhau, không dồn về một luồng.
     @Test
     void xuLyNhieuTaiKhoanTrenNhieuLuongKhacNhau() {
         for (int i = 1; i <= 4; i++) {
@@ -126,7 +119,6 @@ class SocialMetricsJobIntegrationTest {
         assertThat(metrics.findAll()).hasSize(4);
     }
 
-    // Việc phải chạy trên bể luồng riêng (tiền tố crawl-) và trải qua nhiều luồng
     @Test
     void chayTrenNhieuLuongRieng() {
         for (int i = 1; i <= 4; i++) {
@@ -140,7 +132,6 @@ class SocialMetricsJobIntegrationTest {
         assertThat(crawlThreadNames).isNotEmpty();
         assertThat(crawlThreadNames).allSatisfy(name -> assertThat(name).startsWith("crawl-"));
         assertThat(crawlThreadNames).doesNotContain(callerThread);
-        // 4 tài khoản, bể 4 luồng -> phải dùng nhiều hơn một luồng.
         assertThat(crawlThreadNames).hasSizeGreaterThan(1);
     }
 
@@ -155,7 +146,6 @@ class SocialMetricsJobIntegrationTest {
         assertThat(metrics.findAll()).isEmpty();
     }
 
-    // "Last updated time": lấy đúng lần chạy gần nhất.
     @Test
     void trangThaiTraVeLanChayGanNhat() {
         User owner = saveUser("a@example.com");
@@ -173,7 +163,6 @@ class SocialMetricsJobIntegrationTest {
             assertThat(last.totalPosts()).isEqualTo(1);
         });
         assertThat(crawlStatusService.recentRuns()).hasSize(2);
-        // Mới nhất đứng trước.
         assertThat(crawlStatusService.recentRuns().get(0).id())
             .isGreaterThan(crawlStatusService.recentRuns().get(1).id());
     }

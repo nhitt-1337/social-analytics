@@ -14,12 +14,10 @@ import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Chạy trên DB thật vì cần kiểm câu truy vấn đếm gộp và việc ghi đè bản ghi cũ
 @DataJpaTest
 @Import(StatisticsService.class)
 @ActiveProfiles("test")
 class StatisticsServiceTest {
-
     @Autowired StatisticsService statisticsService;
     @Autowired PlatformSummaryRepository summaries;
     @Autowired PostRepository posts;
@@ -66,13 +64,11 @@ class StatisticsServiceTest {
         statisticsService.refresh();
 
         assertThat(summaryOf(Platform.FACEBOOK).getPostCount()).isEqualTo(3);
-        // Hai tài khoản khác nhau cùng đăng trên Facebook -> đếm distinct.
         assertThat(summaryOf(Platform.FACEBOOK).getAccountCount()).isEqualTo(2);
         assertThat(summaryOf(Platform.TWITTER).getPostCount()).isEqualTo(1);
         assertThat(summaryOf(Platform.TWITTER).getAccountCount()).isEqualTo(1);
     }
 
-    // Nền tảng chưa có bài nào vẫn phải có dòng với số 0, không được thiếu.
     @Test
     void nenTangChuaCoBaiVanCoDongVoiSoKhong() {
         savePost(first, Platform.FACEBOOK, "fb-1");

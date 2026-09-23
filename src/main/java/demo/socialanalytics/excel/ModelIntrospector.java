@@ -7,10 +7,7 @@ import java.lang.reflect.RecordComponent;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Suy ra danh sách cột của MỘT LỚP BẤT KỲ bằng Reflection, không cần annotation nào.
 public final class ModelIntrospector {
-
-    // Không phải thuộc tính dữ liệu, bỏ qua.
     private static final Set<String> IGNORED = Set.of("class", "hashCode", "toString");
 
     private static final Map<Class<?>, List<ModelProperty>> CACHE = new ConcurrentHashMap<>();
@@ -31,7 +28,6 @@ public final class ModelIntrospector {
         return List.copyOf(properties);
     }
 
-    // record: mỗi component có sẵn một accessor cùng tên.
     private static List<ModelProperty> scanRecord(Class<?> type) {
         List<ModelProperty> properties = new ArrayList<>();
         for (RecordComponent component : type.getRecordComponents()) {
@@ -41,12 +37,10 @@ public final class ModelIntrospector {
         return properties;
     }
 
-    // Lớp thường: duyệt theo field (để có thứ tự ổn định), mỗi field tìm getter tương ứng.
     private static List<ModelProperty> scanBean(Class<?> type) {
         List<ModelProperty> properties = new ArrayList<>();
         for (Class<?> current = type; current != null && current != Object.class;
              current = current.getSuperclass()) {
-
             for (Field field : current.getDeclaredFields()) {
                 if (field.isSynthetic() || Modifier.isStatic(field.getModifiers())) {
                     continue;
@@ -78,13 +72,11 @@ public final class ModelIntrospector {
                     return method;
                 }
             } catch (NoSuchMethodException ignored) {
-                // thử tên kế tiếp
             }
         }
         return null;
     }
 
-    // camelCase -> "Camel case", để tiêu đề cột đọc được mà không phải khai tay từng cái.
     static String toHeader(String name) {
         StringBuilder header = new StringBuilder();
         for (int index = 0; index < name.length(); index++) {

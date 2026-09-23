@@ -6,7 +6,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Một lần đo tương tác của bài viết.
 @Getter
 @Entity
 @Table(
@@ -18,7 +17,6 @@ import java.time.LocalDateTime;
     }
 )
 public class SocialMetric {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,12 +38,10 @@ public class SocialMetric {
     @Setter
     private Integer comments = 0;
 
-    // Số follower của tài khoản đăng bài tại thời điểm đo.
     @Column(nullable = false)
     @Setter
     private Integer followers = 0;
 
-    // Thời điểm crawl. Mặc định là lúc tạo nếu client không gửi.
     @Column(name = "collected_at", nullable = false)
     @Setter
     private LocalDateTime collectedAt;

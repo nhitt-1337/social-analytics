@@ -18,12 +18,10 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Chạy trên DB thật vì cái cần kiểm là câu native query gộp theo ngày
 @DataJpaTest
 @Import({ChartDataService.class, StatisticsService.class})
 @ActiveProfiles("test")
 class ChartDataServiceTest {
-
     @Autowired ChartDataService chartDataService;
     @Autowired StatisticsService statisticsService;
     @Autowired UserRepository users;
@@ -89,7 +87,6 @@ class ChartDataServiceTest {
         ChartDataResponse data = chartDataService.chartData(null, 7);
 
         assertThat(data.labels()).containsExactly(today);
-        // 180 (lần cuối), KHÔNG phải 430 (tổng cả ba lần).
         assertThat(data.likes()).containsExactly(180L);
     }
 
@@ -119,7 +116,6 @@ class ChartDataServiceTest {
         assertThat(chartDataService.chartData(null, 7).likes()).containsExactly(140L);
     }
 
-    // Ngoài cửa sổ thời gian thì không được tính vào.
     @Test
     void boQuaSoLieuNgoaiKhoangThoiGian() {
         Post post = savePost(Platform.FACEBOOK, "fb-1");
@@ -161,7 +157,6 @@ class ChartDataServiceTest {
         saveMetric(post, 50, LocalDate.now().minusDays(ChartDataService.DEFAULT_DAYS).atTime(9, 0));
         entityManager.flush();
 
-        // Mốc cũ nằm ngoài cửa sổ mặc định.
         assertThat(chartDataService.chartData(null, null).likes()).containsExactly(100L);
     }
 

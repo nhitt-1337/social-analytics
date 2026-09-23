@@ -6,7 +6,6 @@ import java.lang.reflect.Method;
 
 // Ưu tiên getter vì nhiều lớp tính giá trị trong getter
 public record ModelProperty(String name, String header, Method getter, Field field, Class<?> type) {
-
     static ModelProperty ofGetter(String name, String header, Method getter) {
         getter.setAccessible(true);
         return new ModelProperty(name, header, getter, null, getter.getReturnType());
@@ -21,7 +20,6 @@ public record ModelProperty(String name, String header, Method getter, Field fie
         try {
             return getter != null ? getter.invoke(target) : field.get(target);
         } catch (InvocationTargetException exception) {
-            // Getter tự ném lỗi (vd lazy loading ngoài transaction).
             throw new IllegalStateException(
                 "Lỗi khi đọc thuộc tính '" + name + "': " + exception.getCause(), exception.getCause());
         } catch (IllegalAccessException exception) {
