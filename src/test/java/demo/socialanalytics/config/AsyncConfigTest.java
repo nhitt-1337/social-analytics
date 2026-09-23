@@ -14,7 +14,7 @@ import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Cấu hình bể luồng: để mặc định thì @Scheduled chạy trên MỘT luồng và @Async tạo luồng mới
+// Mặc định @Scheduled chạy một luồng, @Async tạo luồng không giới hạn
 @SpringBootTest(properties = {
     "social.crawl.pool-size=4",
     "social.crawl.queue-capacity=10"
@@ -38,7 +38,7 @@ class AsyncConfigTest {
     // Bể của @Scheduled phải có nhiều hơn một luồng, nếu không một job chậm sẽ chặn mọi job khác.
     @Test
     void beLuongLichChayCoNhieuHonMotLuong() {
-        // getPoolSize() trả về số luồng ĐANG tồn tại (0 khi chưa có việc nào), không phải cấu hình ->
+        // getPoolSize() trả số luồng đang tồn tại, không phải cấu hình
         assertThat(taskScheduler.getScheduledThreadPoolExecutor().getCorePoolSize()).isGreaterThan(1);
         assertThat(taskScheduler.getThreadNamePrefix()).isEqualTo("scheduler-");
     }
@@ -74,14 +74,14 @@ class AsyncConfigTest {
         assertThat(threadName.get(3, TimeUnit.SECONDS)).startsWith("crawl-");
     }
 
-    // Hàng đợi đầy thì tác vụ chạy ngay trên luồng gọi (CallerRunsPolicy) chứ không bị vứt bỏ
+    // Hàng đợi đầy thì chạy trên luồng gọi, không vứt bỏ tác vụ
     @Test
     void hangDoiDayThiChayTrenLuongGoiChuKhongVutBo() {
         assertThat(crawlExecutor.getThreadPoolExecutor().getRejectedExecutionHandler())
             .isInstanceOf(ThreadPoolExecutor.CallerRunsPolicy.class);
     }
 
-    // Ngoại lệ từ method @Async trả về void không quay lại được luồng gọi; không có handler thì nó
+    // Ngoại lệ từ @Async trả void không quay lại luồng gọi, không handler thì mất dấu
     @Test
     void coHandlerChoNgoaiLeKhongDuocXuLyTrongLuongNen() throws Exception {
         AsyncConfig config = new AsyncConfig(new CrawlProperties(

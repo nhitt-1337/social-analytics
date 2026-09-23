@@ -43,7 +43,7 @@ class PostControllerTest {
 
     @MockitoBean PostService postService;
 
-    // SecurityConfig cần bean này để dựng oauth2Login; lát cắt web không nạp @Service nên phải
+    // SecurityConfig cần bean này; lát cắt web không nạp @Service nên phải mock
     @MockitoBean SocialLoginUserService socialLoginUserService;
 
     private PostResponse sampleResponse() {
@@ -246,7 +246,7 @@ class PostControllerTest {
             .andExpect(status().isNotFound());
     }
 
-    // MockMvc không tự suy ra context-path, phải khai báo tay; servletPath là phần ĐẦY ĐỦ sau
+    // servletPath là phần đầy đủ sau context-path: "/posts/1" chứ không phải "/posts"
     private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder req(
         String method, String suffix) {
         String url = BASE + suffix;

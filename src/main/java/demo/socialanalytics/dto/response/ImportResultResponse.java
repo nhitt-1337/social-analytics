@@ -2,7 +2,7 @@ package demo.socialanalytics.dto.response;
 
 import java.util.List;
 
-// Kết quả import Excel. Import "chịu lỗi": dòng nào sai thì bỏ qua và ghi vào errors,
+// Import chịu lỗi: dòng sai bị bỏ và ghi vào errors, dòng đúng vẫn lưu
 public record ImportResultResponse(
     int totalRows,
     int imported,

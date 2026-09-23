@@ -80,7 +80,7 @@ public class DeadLetterListener {
         }
     }
 
-    // Mọi lỗi đọc đều nuốt lại: không ghi nổi nội dung thì vẫn phải ghi được rằng CÓ một message
+    // Nuốt mọi lỗi đọc: ném ở đây là message quay lại DLQ và lặp vô hạn
     private String readPayload(Message message) {
         try {
             if (message instanceof TextMessage text) {

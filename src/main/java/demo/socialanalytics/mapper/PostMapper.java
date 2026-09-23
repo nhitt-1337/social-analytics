@@ -16,7 +16,7 @@ public class PostMapper {
         this.metricMapper = metricMapper;
     }
 
-    // latestMetric do service truyền vào (null nếu bài chưa có lần đo nào) thay vì đọc
+    // latestMetric do service truyền vào; đọc post.getMetrics() sẽ gây N+1
     public PostResponse toResponse(Post post, SocialMetric latestMetric) {
         MetricResponse metric = latestMetric == null ? null : metricMapper.toResponse(latestMetric);
         return new PostResponse(

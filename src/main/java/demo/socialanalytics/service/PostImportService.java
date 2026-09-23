@@ -77,7 +77,7 @@ public class PostImportService {
             int rowNumber = entry.rowNumber();
             String key = key(row);
 
-            // existing chứa cả bài đã có trong DB lẫn bài vừa gặp ở dòng trên trong cùng file
+            // Tập này gồm cả bài đã có trong DB lẫn dòng đã gặp phía trên, nên file tự trùng cũng bị chặn
             if (!existing.add(key)) {
                 errors.add(new ImportResultResponse.RowErrorResponse(rowNumber,
                     "bài viết " + row.getExternalId() + " trên " + row.getPlatform().getSlug()
@@ -95,7 +95,7 @@ public class PostImportService {
             result.totalRows() - toSave.size(),
             List.copyOf(errors));
 
-        // Phát sự kiện nội bộ; ImportCompletedProducer mới là nơi đẩy lên hàng đợi, và chỉ đẩy
+        // Phát sự kiện nội bộ; producer mới đẩy lên hàng đợi, và chỉ sau khi commit
         eventPublisher.publishEvent(new ImportCompletedEvent(new ImportCompletedMessage(
             userId, response.totalRows(), response.imported(), response.skipped(),
             LocalDateTime.now())));

@@ -22,7 +22,7 @@ class ExcelMapperTest {
 
     // ----- Class dùng làm "vật thí nghiệm" -----
 
-    // Cố tình khai báo field theo thứ tự lộn xộn so với order để chứng minh ExcelMapper sắp cột
+    // Field khai lộn xộn so với order, để kiểm ExcelMapper sắp theo order
     static class SampleRow {
         @ExcelColumn(header = "Ngày đo", order = 3)
         private LocalDateTime measuredAt;

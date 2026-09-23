@@ -6,7 +6,7 @@ public final class Queues {
     // Phát khi một lần import Excel kết thúc.
     public static final String IMPORT_COMPLETED = "import.completed";
 
-    // Hàng đợi thư chết của ActiveMQ. Broker tự chuyển message sang đây sau khi đã thử lại
+    // DLQ mặc định của ActiveMQ, dùng chung cho mọi hàng đợi
     public static final String DEAD_LETTER = "ActiveMQ.DLQ";
 
     private Queues() {

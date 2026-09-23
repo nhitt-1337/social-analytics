@@ -180,7 +180,7 @@ class MetricServiceTest {
             assertThat(result.postId()).isEqualTo(10L);
         }
 
-        // comments là trường duy nhất cho phép bỏ trống -> phải quy về 0, không để null vì cột trong
+        // comments cho phép bỏ trống nhưng cột trong DB là NOT NULL, phải quy về 0
         @Test
         void commentsBoTrongThiQuyVe0() {
             when(postRepository.findById(10L)).thenReturn(Optional.of(post));

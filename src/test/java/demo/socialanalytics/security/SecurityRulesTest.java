@@ -41,7 +41,7 @@ class SecurityRulesTest {
     @DisplayName("Chưa đăng nhập")
     class Anonymous {
 
-        // Client gọi API mong nhận JSON: trả 401 để phía gọi xử lý được, không trả về trang HTML đăng
+        // Client nhận JSON thì trả 401, không trả trang HTML đăng nhập
         @Test
         void goiApiThiNhan401() throws Exception {
             mvc.perform(api("get", "/posts").accept(MediaType.APPLICATION_JSON))
@@ -56,7 +56,7 @@ class SecurityRulesTest {
                 .andExpect(redirectedUrl("/api/v1/login"));
         }
 
-        // Trình duyệt thật gửi header Accept dài, KẾT THÚC bằng "*/*;q=0.8". Mà */* thì
+        // Trình duyệt thật gửi kèm "*/*;q=0.8", mà */* thì tương thích với application/json
         @Test
         void trinhDuyetThatDuocChuyenToiLogin() throws Exception {
             mvc.perform(get("/api/v1/dashboard").contextPath("/api/v1").servletPath("/dashboard")
@@ -80,7 +80,7 @@ class SecurityRulesTest {
                 .andExpect(status().isOk());
         }
 
-        // Endpoint WebSocket được miễn CSRF (SockJS không gắn được token khi lùi về HTTP), nên nó phải
+        // /ws miễn CSRF nên phải được bảo vệ bằng lớp còn lại: bắt buộc đăng nhập
         @Test
         void khongDangNhapThiKhongMoDuocWebSocket() throws Exception {
             mvc.perform(page("get", "/ws/info"))
@@ -142,7 +142,7 @@ class SecurityRulesTest {
                 .andExpect(status().isForbidden());
         }
 
-        // /ws được miễn CSRF có chủ đích: SockJS khi lùi về HTTP dùng POST mà không gắn được token, có
+        // /ws miễn CSRF có chủ đích: SockJS lùi về HTTP dùng POST, không gắn được token
         @Test
         void endpointWebSocketDuocMienCsrf() throws Exception {
             mvc.perform(api("post", "/ws/info"))
@@ -190,7 +190,7 @@ class SecurityRulesTest {
                 .andExpect(status().isForbidden());
         }
 
-        // Đăng xuất phải là POST kèm token: để GET thì chỉ cần dụ bấm một đường link là đăng xuất được
+        // Đăng xuất phải là POST kèm token, để GET thì dụ bấm link là đăng xuất được người khác
         @Test
         void dangXuatBangPostKemToken() throws Exception {
             mvc.perform(api("post", "/logout").with(csrf()))

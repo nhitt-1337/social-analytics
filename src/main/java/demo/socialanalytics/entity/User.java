@@ -20,7 +20,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Cho phép null: đăng nhập bằng X/Twitter không trả về email (cần quyền riêng mới có),
+    // Cho phép null: X/Twitter không trả về email
     @Column(unique = true, length = 255)
     @Setter
     private String email;

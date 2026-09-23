@@ -124,7 +124,7 @@ class WebSocketBroadcastTest {
         session.disconnect();
     }
 
-    // Đăng ký chủ đề nào thì chỉ nhận chủ đề đó — đây là điều WebSocket trần không có, phải nhờ
+    // Đăng ký chủ đề nào chỉ nhận chủ đề đó, WebSocket trần không làm được
     @Test
     void chiNhanDuocChuDeDaDangKy() throws Exception {
         StompSession session = connect();

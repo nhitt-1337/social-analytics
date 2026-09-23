@@ -57,7 +57,7 @@ public class MockSocialApiClient implements SocialApiClient {
         try {
             Thread.sleep(latency);
         } catch (InterruptedException exception) {
-            // Khôi phục cờ ngắt rồi báo lỗi lên: nuốt InterruptedException là cách chắc chắn khiến job
+            // Khôi phục cờ ngắt, nếu không job sẽ không dừng được khi ứng dụng tắt
             Thread.currentThread().interrupt();
             throw new SocialApiException("Bị ngắt khi đang gọi API", exception);
         }

@@ -51,7 +51,7 @@ public interface SocialMetricRepository extends JpaRepository<SocialMetric, Long
     @Query("select coalesce(sum(m.likes), 0) from SocialMetric m where m.post.id = :postId")
     long sumLikesByPostId(@Param("postId") Long postId);
 
-    // Export báo cáo: lấy chỉ số của nhiều bài trong MỘT truy vấn rồi chọn bản mới nhất ở tầng
+    // Lấy chỉ số nhiều bài trong một truy vấn, tránh N+1
     @Query("select m from SocialMetric m where m.post.id in :postIds "
         + "order by m.post.id, m.collectedAt desc, m.id desc")
     List<SocialMetric> findByPostIdInOrderByCollectedAtDesc(@Param("postIds") Collection<Long> postIds);

@@ -16,7 +16,7 @@ class SocialLoginClientRegistrationsTest {
 
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class))
-        // Cấu hình này còn khai một bean lưu token cần repository JPA; lát cắt ở đây không dựng JPA
+        // Cấu hình này khai thêm bean lưu token cần repository JPA, thay bằng mock
         .withBean(AuthorizedClientJpaRepository.class,
             () -> org.mockito.Mockito.mock(AuthorizedClientJpaRepository.class))
         .withUserConfiguration(SocialLoginClientRegistrations.class);
@@ -67,7 +67,7 @@ class SocialLoginClientRegistrationsTest {
                 .containsExactlyInAnyOrder("facebook", "x"));
     }
 
-    // Có client id nhưng quên secret: nói thẳng ra, đừng để người dùng ngồi đoán vì sao nút đăng
+    // Có client id nhưng quên secret thì báo thẳng, đừng để người dùng ngồi đoán
     @Test
     void thieuSecretThiBaoLoiRoRang() {
         runner.withPropertyValues("social.login.facebook.client-id=fb-id")
@@ -80,7 +80,7 @@ class SocialLoginClientRegistrationsTest {
             });
     }
 
-    // Scope phải cấu hình được: Facebook chỉ cấp sẵn public_profile, `email` phải bật riêng
+    // Scope phải cấu hình được: Facebook chỉ cấp sẵn public_profile
     @Test
     void scopeCauHinhDuocQuaProperties() {
         runner.withPropertyValues(

@@ -69,7 +69,7 @@ public class JpaOAuth2AuthorizedClientService implements OAuth2AuthorizedClientS
             accessToken.getScopes() == null ? null : String.join(",", accessToken.getScopes()));
 
         OAuth2RefreshToken refreshToken = authorizedClient.getRefreshToken();
-        // Nhà cung cấp có thể không gửi lại refresh token ở lần đăng nhập sau
+        // Không nhận được refresh token mới thì giữ bản cũ, đừng xoá mất
         if (refreshToken != null) {
             stored.setRefreshTokenValue(refreshToken.getTokenValue());
             stored.setRefreshTokenIssuedAt(refreshToken.getIssuedAt());

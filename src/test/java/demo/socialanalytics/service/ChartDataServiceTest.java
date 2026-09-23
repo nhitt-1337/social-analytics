@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Chạy trên DB thật vì cái cần kiểm là câu native query gộp theo ngày — mock repository thì
+// Chạy trên DB thật vì cái cần kiểm là câu native query gộp theo ngày
 @DataJpaTest
 @Import({ChartDataService.class, StatisticsService.class})
 @ActiveProfiles("test")
@@ -76,7 +76,7 @@ class ChartDataServiceTest {
         assertThat(data.shares()).containsExactly(50L, 100L);
     }
 
-    // Đây là điểm mấu chốt của câu truy vấn: một bài crawl NHIỀU LẦN trong cùng một ngày thì chỉ
+    // Một bài crawl nhiều lần trong ngày thì chỉ lấy lần đo cuối, không cộng dồn
     @Test
     void motNgayNhieuLanChiLayLanCuoi() {
         Post post = savePost(Platform.FACEBOOK, "fb-1");

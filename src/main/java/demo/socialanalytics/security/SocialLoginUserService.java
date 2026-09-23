@@ -85,7 +85,7 @@ public class SocialLoginUserService implements OAuth2UserService<OAuth2UserReque
         return userRepository.save(user);
     }
 
-    // Đã có tài khoản LOCAL trùng email thì gắn danh tính mạng xã hội vào chính tài khoản đó,
+    // Có tài khoản LOCAL trùng email thì gắn vào đó, vì cột email là unique
     private User linkOrCreate(SocialUserAttributes social) {
         Optional<User> byEmail = social.email() == null
             ? Optional.empty()

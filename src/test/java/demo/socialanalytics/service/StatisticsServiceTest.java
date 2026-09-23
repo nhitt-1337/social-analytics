@@ -14,7 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Chạy trên DB thật (H2) vì cái cần kiểm là câu truy vấn đếm gộp và việc ghi đè bản ghi cũ —
+// Chạy trên DB thật vì cần kiểm câu truy vấn đếm gộp và việc ghi đè bản ghi cũ
 @DataJpaTest
 @Import(StatisticsService.class)
 @ActiveProfiles("test")
@@ -100,7 +100,7 @@ class StatisticsServiceTest {
         assertThat(summaryOf(Platform.FACEBOOK).getPostCount()).isZero();
     }
 
-    // Chạy lại nhiều lần cho ra cùng kết quả và KHÔNG sinh thêm dòng trùng — điều bắt buộc vì JMS
+    // Chạy lại nhiều lần vẫn một kết quả, vì JMS chỉ bảo đảm "ít nhất một lần"
     @Test
     void chayLaiKhongSinhDongTrung() {
         savePost(first, Platform.FACEBOOK, "fb-1");

@@ -91,7 +91,7 @@ public class ModelExporter {
         }
     }
 
-    // Kiểu nào không biết cách hiển thị thì đổ về String.valueOf: thà có một cột đọc tạm được còn
+    // Kiểu lạ đổ về String.valueOf: thà một cột đọc tạm được còn hơn hỏng cả file
     private void fill(Cell cell, Object value, CellStyle dateTimeStyle, CellStyle dateOnlyStyle) {
         switch (value) {
             case null -> cell.setBlank();

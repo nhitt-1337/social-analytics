@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-// Tên có hậu tố Jpa để không trùng tên bean với `authorizedClientRepository` mà Spring Boot
+// Hậu tố Jpa để không trùng tên bean với authorizedClientRepository của Spring Boot
 public interface AuthorizedClientJpaRepository extends JpaRepository<AuthorizedClient, Long> {
 
     Optional<AuthorizedClient> findByRegistrationIdAndPrincipalName(

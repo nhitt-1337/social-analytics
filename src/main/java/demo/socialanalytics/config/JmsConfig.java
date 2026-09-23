@@ -56,7 +56,7 @@ public class JmsConfig {
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jmsMessageConverter);
 
-        // BẮT BUỘC cho cơ chế thử lại: phiên có transaction thì listener ném lỗi sẽ rollback và
+        // Bắt buộc cho cơ chế thử lại: listener ném lỗi thì rollback, message quay lại hàng đợi
         factory.setSessionTransacted(true);
 
         // Nhiều listener chạy song song; hàng đợi dồn thì tự nâng lên tới 5.

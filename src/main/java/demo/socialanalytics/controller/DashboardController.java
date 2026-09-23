@@ -41,7 +41,7 @@ public class DashboardController {
         return "redirect:/dashboard";
     }
 
-    // Trang đăng nhập tự dựng (thay trang mặc định của Spring Security) để đặt đúng hai nút
+    // Trang đăng nhập tự dựng thay trang mặc định của Spring Security
     @GetMapping("/login")
     public String login(Model model) {
         model.addAttribute("providers", availableProviders());

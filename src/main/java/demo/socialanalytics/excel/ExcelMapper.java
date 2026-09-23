@@ -110,7 +110,7 @@ public class ExcelMapper {
         for (Cell cell : headerRow) {
             String text = cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : null;
             if (text != null && !text.isBlank()) {
-                // So khớp không phân biệt hoa thường và khoảng trắng thừa -> người dùng gõ lại tiêu đề hơi
+                // So khớp không phân biệt hoa thường và khoảng trắng thừa
                 indexes.putIfAbsent(normalize(text), cell.getColumnIndex());
             }
         }

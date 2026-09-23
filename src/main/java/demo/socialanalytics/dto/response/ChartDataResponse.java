@@ -3,7 +3,7 @@ package demo.socialanalytics.dto.response;
 import java.time.LocalDate;
 import java.util.List;
 
-// Dữ liệu cho Chart.js, đã sắp sẵn thành labels + các series để phía trình duyệt khỏi phải
+// Sắp sẵn thành labels + series, phía trình duyệt khỏi phải biến đổi gì thêm
 public record ChartDataResponse(
     List<LocalDate> labels,
     List<Long> likes,

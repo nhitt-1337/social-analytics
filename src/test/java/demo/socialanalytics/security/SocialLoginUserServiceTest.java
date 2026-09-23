@@ -40,7 +40,7 @@ class SocialLoginUserServiceTest {
         });
     }
 
-    // upsert là private; gọi qua Reflection để test được quyết định nghiệp vụ mà không phải nới
+    // upsert là private, gọi qua Reflection thay vì nới quyền chỉ để test
     private User upsert(SocialUserAttributes social) {
         try {
             Method method = SocialLoginUserService.class

@@ -126,7 +126,7 @@ class SocialMetricsJobIntegrationTest {
         assertThat(metrics.findAll()).hasSize(4);
     }
 
-    // Việc phải chạy trên BỂ LUỒNG RIÊNG (tiền tố "crawl-" đặt trong AsyncConfig), và nhiều
+    // Việc phải chạy trên bể luồng riêng (tiền tố crawl-) và trải qua nhiều luồng
     @Test
     void chayTrenNhieuLuongRieng() {
         for (int i = 1; i <= 4; i++) {

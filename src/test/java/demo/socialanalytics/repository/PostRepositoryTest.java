@@ -21,7 +21,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// @DataJpaTest chỉ dựng tầng JPA (không nạp controller/service) và chạy trong transaction
+// @DataJpaTest chỉ dựng tầng JPA và tự rollback sau mỗi test
 @DataJpaTest
 @ActiveProfiles("test")
 class PostRepositoryTest {

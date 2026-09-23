@@ -114,7 +114,7 @@ class SocialMetricsUpdateJobTest {
         verify(broadcaster).chartUpdated(any());
     }
 
-    // Không bài nào cập nhật được thì biểu đồ chẳng có gì mới để vẽ -> khỏi phát tin và khỏi tính
+    // Không bài nào cập nhật được thì khỏi phát tin và khỏi tính lại biểu đồ
     @Test
     void khongCoBaiNaoThanhCongThiKhongPhat() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -150,7 +150,7 @@ class SocialMetricsUpdateJobTest {
         verifyNoInteractions(collector);
     }
 
-    // Ghi một dòng RUNNING trước, cập nhật lại khi xong: dashboard nhìn thấy job đang chạy chứ
+    // Ghi RUNNING trước rồi cập nhật khi xong, để dashboard thấy job đang chạy
     @Test
     void ghiTrangThaiRunningTruocRoiCapNhatSau() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -196,7 +196,7 @@ class SocialMetricsUpdateJobTest {
         assertThat(run.getSucceededPosts()).isEqualTo(4);
     }
 
-    // Lần chạy thứ hai bị bỏ qua khi lần đầu chưa xong — nút "chạy ngay" có thể bấm trúng lúc job
+    // Lần chạy thứ hai bị bỏ khi lần đầu chưa xong
     @Test
     void khongChayChongLenNhau() throws Exception {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));

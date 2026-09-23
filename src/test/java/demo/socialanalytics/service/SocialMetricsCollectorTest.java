@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-// Xử lý lỗi trong luồng nền là phần dễ sai nhất: nuốt lỗi thì mất dấu, để lỗi thoát ra thì
+// Nuốt lỗi thì mất dấu, để lỗi thoát ra thì một bài hỏng kéo sập cả tài khoản
 @ExtendWith(MockitoExtension.class)
 class SocialMetricsCollectorTest {
 

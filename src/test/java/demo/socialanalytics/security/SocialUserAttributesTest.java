@@ -10,7 +10,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Mỗi nhà cung cấp trả một kiểu JSON khác nhau; đây là chỗ kiểm phần đọc hiểu đó
+// Mỗi nhà cung cấp trả một kiểu JSON khác nhau
 class SocialUserAttributesTest {
 
     @Nested
@@ -71,7 +71,7 @@ class SocialUserAttributesTest {
     @Nested
     class X {
 
-        // /2/users/me trả LỒNG trong "data" — lý do không dùng được DefaultOAuth2UserService nguyên
+        // /2/users/me trả lồng trong "data", DefaultOAuth2UserService không đọc được
         @Test
         void docDuocJsonLongTrongDataCuaX() {
             Map<String, Object> attributes = Map.of("data", Map.of(
@@ -124,7 +124,7 @@ class SocialUserAttributesTest {
         }
     }
 
-    // Ghép cả nhà cung cấp vào tên định danh: id trùng nhau giữa hai nền tảng không được coi là
+    // Ghép nhà cung cấp vào định danh: id trùng nhau giữa hai nền tảng không phải một người
     @Test
     void principalNameGomCaNhaCungCapVaId() {
         var facebook = SocialUserAttributes.of("facebook", Map.of("id", "100", "name", "A"));
