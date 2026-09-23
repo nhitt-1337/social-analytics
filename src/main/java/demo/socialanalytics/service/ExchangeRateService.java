@@ -10,10 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 
 // Nguồn tỷ giá GIẢ LẬP, đóng vai nhà cung cấp SOAP bên ngoài.
-//
-// Đây là phía "nhà cung cấp": SocialAnalyticsEndpoint gọi vào đây để trả lời request SOAP.
-// Phía "tiêu thụ" là ExchangeRateClient, gọi ngược trở lại endpoint đó qua HTTP.
-// Nhờ cả hai đầu đều nằm trong ứng dụng, bản demo end-to-end chạy được khi không có mạng.
 @Service
 public class ExchangeRateService {
 
@@ -33,8 +29,7 @@ public class ExchangeRateService {
         BigDecimal sourcePerUsd = rateOf(source);
         BigDecimal targetPerUsd = rateOf(target);
 
-        // Quy về USD rồi đổi sang đích. Giữ 6 chữ số thập phân để cặp như VND -> USD
-        // (khoảng 0,0000394) không bị làm tròn thành 0.
+        // Quy về USD rồi đổi sang đích.
         BigDecimal rate = targetPerUsd.divide(sourcePerUsd, 6, java.math.RoundingMode.HALF_UP);
 
         GetExchangeRateResponse response = new GetExchangeRateResponse();

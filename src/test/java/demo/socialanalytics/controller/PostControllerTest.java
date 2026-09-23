@@ -31,14 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// Test lát cắt tầng web: @WebMvcTest chỉ dựng controller + validation + GlobalExceptionHandler,
-// KHÔNG nạp service thật, không nạp JPA, không cần DB -> chạy nhanh hơn @SpringBootTest nhiều.
-//
-// PostService được thay bằng @MockitoBean (bản thay thế của @MockBean đã bỏ ở Spring Boot 3.4+),
-// nên test ở đây chỉ trả lời đúng một câu hỏi: tầng web ánh xạ request/response/lỗi có đúng không.
-// @Import(SecurityConfig) để lát cắt chạy đúng bộ quy tắc bảo mật của ứng dụng. Không import
-// thì @WebMvcTest dùng chain MẶC ĐỊNH của Spring Security — test sẽ xanh với một cấu hình
-// không hề tồn tại ở production.
+// Không @Import(SecurityConfig) thì @WebMvcTest dùng chain mặc định, không phải của app
 @WebMvcTest(PostController.class)
 @Import(SecurityConfig.class)
 @WithMockUser
@@ -50,8 +43,7 @@ class PostControllerTest {
 
     @MockitoBean PostService postService;
 
-    // SecurityConfig cần bean này để dựng oauth2Login; lát cắt web không nạp @Service nên
-    // phải thay bằng mock.
+    // SecurityConfig cần bean này để dựng oauth2Login; lát cắt web không nạp @Service nên phải
     @MockitoBean SocialLoginUserService socialLoginUserService;
 
     private PostResponse sampleResponse() {
@@ -128,7 +120,7 @@ class PostControllerTest {
 
     // Lỗi do service ném ra phải được GlobalExceptionHandler đổi thành 400 đúng khuôn.
     @Test
-    void nenTangKhongHopLeThiTraVe400() throws Exception {
+    void nenTangKhongHopLeTraVe400() throws Exception {
         when(postService.list(eq("instagram"), anyInt(), anyInt()))
             .thenThrow(new InvalidRequestParameterException("Nền tảng không hợp lệ: instagram"));
 
@@ -254,8 +246,7 @@ class PostControllerTest {
             .andExpect(status().isNotFound());
     }
 
-    // MockMvc không tự suy ra context-path, phải khai báo tay; servletPath là phần
-    // ĐẦY ĐỦ sau context-path nên "/posts/1" chứ không phải "/posts".
+    // MockMvc không tự suy ra context-path, phải khai báo tay; servletPath là phần ĐẦY ĐỦ sau
     private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder req(
         String method, String suffix) {
         String url = BASE + suffix;
@@ -267,8 +258,7 @@ class PostControllerTest {
             default -> get(url);
         };
         builder.contextPath("/api/v1").servletPath(servletPath);
-        // CSRF bật cho toàn ứng dụng nên mọi request làm thay đổi dữ liệu đều phải kèm token.
-        // Riêng chuyện thiếu token bị chặn được kiểm ở SecurityConfigTest.
+        // CSRF bật cho toàn ứng dụng nên mọi request làm thay đổi dữ liệu đều phải kèm token
         if (!"get".equals(method)) {
             builder.with(csrf());
         }

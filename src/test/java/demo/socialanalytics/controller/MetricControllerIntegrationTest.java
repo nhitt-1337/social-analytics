@@ -26,8 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-// Mọi endpoint đều yêu cầu đăng nhập; test này nhắm vào hành vi của API nên giả lập sẵn
-// một người dùng thay vì đi qua luồng OAuth2 thật.
+// Mọi endpoint đều yêu cầu đăng nhập; test này nhắm vào hành vi của API nên giả lập sẵn một
 @WithMockUser
 class MetricControllerIntegrationTest {
 

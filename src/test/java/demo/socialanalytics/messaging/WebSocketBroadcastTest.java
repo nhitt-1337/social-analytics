@@ -35,16 +35,12 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Chuỗi STOMP thật: client nối vào server đang chạy, đăng ký chủ đề, server phát và client nhận.
-//
-// Chạy trên cổng thật (RANDOM_PORT) chứ không phải MockMvc — MockMvc không có WebSocket.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Import(WebSocketBroadcastTest.OpenWebSocketForTest.class)
 class WebSocketBroadcastTest {
 
     // Endpoint /ws yêu cầu đăng nhập; client STOMP ở đây không có phiên nên sẽ bị chặn.
-    // Mở riêng cho test bằng một chain đặt trước, ĐỂ TEST ĐÚNG VIỆC TRUYỀN TIN.
-    // Việc endpoint này được bảo vệ ở cấu hình thật thì SecurityRulesTest kiểm.
     @TestConfiguration
     static class OpenWebSocketForTest {
         @Bean
@@ -94,7 +90,7 @@ class WebSocketBroadcastTest {
     }
 
     @Test
-    void clientNhanDuocDuLieuBieuDoServerPhatRa() throws Exception {
+    void nhanDuocDuLieuBieuDo() throws Exception {
         StompSession session = connect();
         BlockingQueue<ChartDataResponse> received =
             subscribe(session, WebSocketConfig.TOPIC_CHART, ChartDataResponse.class);
@@ -112,7 +108,7 @@ class WebSocketBroadcastTest {
     }
 
     @Test
-    void clientNhanDuocKetQuaLanCrawl() throws Exception {
+    void nhanDuocKetQuaCrawl() throws Exception {
         StompSession session = connect();
         BlockingQueue<CrawlRunResponse> received =
             subscribe(session, WebSocketConfig.TOPIC_CRAWL, CrawlRunResponse.class);
@@ -128,8 +124,7 @@ class WebSocketBroadcastTest {
         session.disconnect();
     }
 
-    // Đăng ký chủ đề nào thì chỉ nhận chủ đề đó — đây là điều WebSocket trần không có,
-    // phải nhờ STOMP mới làm được.
+    // Đăng ký chủ đề nào thì chỉ nhận chủ đề đó — đây là điều WebSocket trần không có, phải nhờ
     @Test
     void chiNhanDuocChuDeDaDangKy() throws Exception {
         StompSession session = connect();
@@ -146,7 +141,7 @@ class WebSocketBroadcastTest {
 
     // Không có ai đăng ký thì phát tin vẫn không được ném lỗi.
     @Test
-    void phatTinKhiKhongCoAiDangKyVanKhongLoi() {
+    void khongAiDangKyVanKhongLoi() {
         broadcaster.chartUpdated(sampleChartData());
         broadcaster.statisticsUpdated(List.of());
     }

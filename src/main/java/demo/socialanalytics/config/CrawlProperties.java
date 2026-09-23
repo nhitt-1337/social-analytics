@@ -4,7 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 // Cấu hình cho job cập nhật chỉ số, gom vào một chỗ thay vì rải @Value khắp nơi.
-// Tiền tố: social.crawl.* trong application.yaml
 @ConfigurationProperties(prefix = "social.crawl")
 public record CrawlProperties(
 
@@ -13,12 +12,10 @@ public record CrawlProperties(
 
     @DefaultValue("8") int poolSize,
 
-    // Hàng đợi đầy thì tác vụ mới chạy ngay trên luồng gọi (CallerRunsPolicy) — chậm lại
-    // chứ không mất việc.
+    // Hàng đợi đầy thì tác vụ mới chạy ngay trên luồng gọi (CallerRunsPolicy)
     @DefaultValue("100") int queueCapacity,
 
-    // Chờ tối đa bấy nhiêu giây cho một lần chạy. Quá thì bỏ dở để lần sau còn chạy được,
-    // không để job treo vô hạn.
+    // Chờ tối đa bấy nhiêu giây cho một lần chạy.
     @DefaultValue("300") int timeoutSeconds,
 
     @DefaultValue Mock mock

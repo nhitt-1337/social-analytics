@@ -16,11 +16,7 @@ import org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition;
 import org.springframework.xml.xsd.SimpleXsdSchema;
 import org.springframework.xml.xsd.XsdSchema;
 
-// Dịch vụ SOAP.
-//
-// Đặt ở /soap/* chứ KHÔNG phải /ws/* như hướng dẫn Spring-WS thường viết: /ws đã là endpoint
-// WebSocket của dashboard, hai thứ trùng đường dẫn thì servlet này nuốt luôn cả request
-// WebSocket và phần realtime chết.
+// Không đặt ở /ws vì trùng endpoint WebSocket của dashboard
 @Configuration
 @EnableWs
 @EnableConfigurationProperties(ExchangeRateProperties.class)
@@ -41,7 +37,6 @@ public class WebServiceConfig {
     }
 
     // WSDL sinh tự động từ chính XSD đang dùng, nên tài liệu không bao giờ lệch với thực tế.
-    // Địa chỉ: /api/v1/soap/socialAnalytics.wsdl
     @Bean(name = "socialAnalytics")
     public DefaultWsdl11Definition wsdlDefinition(XsdSchema socialAnalyticsSchema) {
         DefaultWsdl11Definition definition = new DefaultWsdl11Definition();
@@ -57,12 +52,7 @@ public class WebServiceConfig {
         return new SimpleXsdSchema(new ClassPathResource("xsd/social-analytics.xsd"));
     }
 
-    // Ánh xạ ngoại lệ sang MÃ LỖI SOAP đúng ngữ nghĩa.
-    //
-    // Mặc định Spring-WS trả Server fault cho mọi ngoại lệ. Điều đó sai với lỗi do người gọi
-    // gây ra (sai tiền tệ, sai nền tảng): client SOAP đọc mã Server là "lỗi tạm thời phía bạn,
-    // cứ thử lại" nên sẽ retry mãi một request không bao giờ đúng được.
-    // Client fault nói đúng bản chất: sửa request đi rồi hãy gọi lại.
+    // Lỗi do người gọi -> Client fault, để client không retry vô ích
     @Bean
     public SoapFaultMappingExceptionResolver soapFaultResolver() {
         SoapFaultMappingExceptionResolver resolver = new SoapFaultMappingExceptionResolver();
@@ -88,7 +78,6 @@ public class WebServiceConfig {
     }
 
     // Marshaller dùng chung cho cả phía tạo và phía tiêu thụ SOAP.
-    // contextPath là gói chứa các lớp JAXB sinh ra từ XSD.
     @Bean
     public Jaxb2Marshaller jaxb2Marshaller() {
         Jaxb2Marshaller marshaller = new Jaxb2Marshaller();

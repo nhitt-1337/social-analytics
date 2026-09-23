@@ -18,8 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-// Một endpoint xuất Excel cho nhiều loại model. Thêm model mới chỉ cần đăng ký ở
-// ModelExportService, không phải thêm endpoint.
+// Một endpoint xuất Excel cho nhiều loại model.
 @Tag(name = "Export", description = "Xuất model bất kỳ ra Excel bằng Reflection")
 @RestController
 @RequestMapping("/export")

@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // Chạy trên DB thật vì cái cần kiểm là câu native query gộp theo ngày — mock repository thì
-// không kiểm được gì.
 @DataJpaTest
 @Import({ChartDataService.class, StatisticsService.class})
 @ActiveProfiles("test")
@@ -78,9 +77,8 @@ class ChartDataServiceTest {
     }
 
     // Đây là điểm mấu chốt của câu truy vấn: một bài crawl NHIỀU LẦN trong cùng một ngày thì chỉ
-    // lấy lần đo CUỐI, không cộng dồn. Cộng hết lại thì số liệu phồng lên theo tần suất crawl.
     @Test
-    void motNgayCrawlNhieuLanThiChiLayLanDoCuoi() {
+    void motNgayNhieuLanChiLayLanCuoi() {
         Post post = savePost(Platform.FACEBOOK, "fb-1");
         LocalDate today = LocalDate.now();
         saveMetric(post, 100, today.atTime(8, 0));
@@ -96,7 +94,7 @@ class ChartDataServiceTest {
     }
 
     @Test
-    void congSoLieuCuaNhieuBaiTrongCungNgay() {
+    void congSoLieuCuaNhieuBai() {
         Post first = savePost(Platform.FACEBOOK, "fb-1");
         Post second = savePost(Platform.FACEBOOK, "fb-2");
         LocalDate today = LocalDate.now();
@@ -181,7 +179,7 @@ class ChartDataServiceTest {
     }
 
     @Test
-    void nenTangKhongHopLeThiBaoLoi() {
+    void nenTangKhongHopLe() {
         assertThatThrownBy(() -> chartDataService.chartData("instagram", 7))
             .isInstanceOf(InvalidRequestParameterException.class)
             .hasMessageContaining("instagram");

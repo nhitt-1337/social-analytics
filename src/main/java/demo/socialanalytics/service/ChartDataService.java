@@ -73,8 +73,7 @@ public class ChartDataService {
         return days;
     }
 
-    // Kiểu trả về của cột ngày khác nhau giữa các driver (java.sql.Date, LocalDate,
-    // hoặc Timestamp), nên nhận diện từng kiểu thay vì ép cứng một kiểu.
+    // Kiểu trả về của cột ngày khác nhau giữa các driver (java.sql.Date
     private LocalDate toLocalDate(Object value) {
         return switch (value) {
             case LocalDate date -> date;

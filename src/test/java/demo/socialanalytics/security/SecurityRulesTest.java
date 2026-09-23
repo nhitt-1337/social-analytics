@@ -17,9 +17,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // Kiểm tra bộ quy tắc trong SecurityConfig: ai vào được đâu, và CSRF chặn cái gì.
-//
-// Profile test không khai báo client id/secret nên không có Social Login — đúng ý đồ ở đây:
-// phần này kiểm tra bảo mật nền, phần OAuth2 để riêng ở OAuth2LoginTest.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -44,8 +41,7 @@ class SecurityRulesTest {
     @DisplayName("Chưa đăng nhập")
     class Anonymous {
 
-        // Client gọi API mong nhận JSON: trả 401 để phía gọi xử lý được,
-        // không trả về trang HTML đăng nhập.
+        // Client gọi API mong nhận JSON: trả 401 để phía gọi xử lý được, không trả về trang HTML đăng
         @Test
         void goiApiThiNhan401() throws Exception {
             mvc.perform(api("get", "/posts").accept(MediaType.APPLICATION_JSON))
@@ -61,10 +57,8 @@ class SecurityRulesTest {
         }
 
         // Trình duyệt thật gửi header Accept dài, KẾT THÚC bằng "*/*;q=0.8". Mà */* thì
-        // "tương thích" với application/json, nên nếu không loại */* ra khỏi bộ so khớp thì
-        // mở trang bằng Chrome cũng bị coi là gọi API và nhận 401 thay vì trang đăng nhập.
         @Test
-        void trinhDuyetThatVoiHeaderAcceptDayDuVanDuocChuyenToiLogin() throws Exception {
+        void trinhDuyetThatDuocChuyenToiLogin() throws Exception {
             mvc.perform(get("/api/v1/dashboard").contextPath("/api/v1").servletPath("/dashboard")
                     .header("Accept",
                         "text/html,application/xhtml+xml,application/xml;q=0.9,"
@@ -86,8 +80,7 @@ class SecurityRulesTest {
                 .andExpect(status().isOk());
         }
 
-        // Endpoint WebSocket được miễn CSRF (SockJS không gắn được token khi lùi về HTTP),
-        // nên nó phải được bảo vệ bằng lớp còn lại: bắt buộc đăng nhập.
+        // Endpoint WebSocket được miễn CSRF (SockJS không gắn được token khi lùi về HTTP), nên nó phải
         @Test
         void khongDangNhapThiKhongMoDuocWebSocket() throws Exception {
             mvc.perform(page("get", "/ws/info"))
@@ -113,8 +106,7 @@ class SecurityRulesTest {
     @WithMockUser
     class Csrf {
 
-        // Đã đăng nhập nhưng KHÔNG kèm token -> bị chặn. Đây chính là điều CSRF bảo vệ:
-        // trang web khác không lấy được token nên không thay mặt người dùng gửi lệnh được.
+        // Đã đăng nhập nhưng KHÔNG kèm token -> bị chặn
         @Test
         void thieuTokenThiBiChan403() throws Exception {
             mvc.perform(api("post", "/posts")
@@ -125,8 +117,7 @@ class SecurityRulesTest {
                 .andExpect(status().isForbidden());
         }
 
-        // Có token thì đi tiếp vào controller. 404 là vì userId=1 không tồn tại —
-        // điều cần chứng minh là KHÔNG còn 403.
+        // Có token thì đi tiếp vào controller
         @Test
         void coTokenThiDiTiepVaoController() throws Exception {
             mvc.perform(api("post", "/posts").with(csrf())
@@ -151,8 +142,7 @@ class SecurityRulesTest {
                 .andExpect(status().isForbidden());
         }
 
-        // /ws được miễn CSRF có chủ đích: SockJS khi lùi về HTTP dùng POST mà không gắn
-        // được token, có CSRF thì kết nối không bao giờ mở được.
+        // /ws được miễn CSRF có chủ đích: SockJS khi lùi về HTTP dùng POST mà không gắn được token, có
         @Test
         void endpointWebSocketDuocMienCsrf() throws Exception {
             mvc.perform(api("post", "/ws/info"))
@@ -200,8 +190,7 @@ class SecurityRulesTest {
                 .andExpect(status().isForbidden());
         }
 
-        // Đăng xuất phải là POST kèm token: để GET thì chỉ cần dụ bấm một đường link
-        // là đăng xuất được người khác.
+        // Đăng xuất phải là POST kèm token: để GET thì chỉ cần dụ bấm một đường link là đăng xuất được
         @Test
         void dangXuatBangPostKemToken() throws Exception {
             mvc.perform(api("post", "/logout").with(csrf()))

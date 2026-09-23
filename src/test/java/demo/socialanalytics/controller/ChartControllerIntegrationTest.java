@@ -112,7 +112,7 @@ class ChartControllerIntegrationTest {
     }
 
     @Test
-    void nenTangKhongHopLeThiTraVe400() throws Exception {
+    void nenTangKhongHopLeTraVe400() throws Exception {
         mvc.perform(chartData().param("platform", "instagram"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.message")

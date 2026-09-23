@@ -8,14 +8,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 // Suy ra danh sách cột của MỘT LỚP BẤT KỲ bằng Reflection, không cần annotation nào.
-//
-// Khác với ExcelMapper (đòi @ExcelColumn): ở đây model nào cũng xuất được, kể cả lớp của thư viện
-// ngoài hay lớp sinh tự động từ XSD — những thứ không sửa được để gắn annotation vào.
-//
-// Thứ tự cột:
-//   - record  -> đúng thứ tự khai báo component (Java giữ lại thông tin này)
-//   - lớp thường -> thứ tự khai báo field, vì getXxx() do Reflection trả về KHÔNG có thứ tự
-//     ổn định giữa các lần chạy JVM; xếp theo field thì file xuất ra lần nào cũng như nhau.
 public final class ModelIntrospector {
 
     // Không phải thuộc tính dữ liệu, bỏ qua.
@@ -50,7 +42,6 @@ public final class ModelIntrospector {
     }
 
     // Lớp thường: duyệt theo field (để có thứ tự ổn định), mỗi field tìm getter tương ứng.
-    // Không có getter thì đọc thẳng field.
     private static List<ModelProperty> scanBean(Class<?> type) {
         List<ModelProperty> properties = new ArrayList<>();
         for (Class<?> current = type; current != null && current != Object.class;

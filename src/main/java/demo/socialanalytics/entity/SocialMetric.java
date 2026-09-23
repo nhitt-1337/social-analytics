@@ -6,8 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Một lần đo tương tác của bài viết. Lưu theo dạng chuỗi thời gian (mỗi lần crawl một dòng)
-// thay vì ghi đè, để vẽ được biểu đồ tăng trưởng bằng Chart.js ở bước sau.
+// Một lần đo tương tác của bài viết.
 @Getter
 @Entity
 @Table(

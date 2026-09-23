@@ -17,11 +17,7 @@ import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
-// Bật @Async và @Scheduled, và khai báo rõ hai bể luồng riêng cho chúng.
-//
-// Không khai báo thì Spring dùng bể mặc định: @Scheduled chạy trên MỘT luồng duy nhất
-// (một job chậm sẽ chặn mọi job khác), còn @Async dùng SimpleAsyncTaskExecutor —
-// tạo luồng mới cho TỪNG tác vụ, không hề giới hạn. Cả hai đều không dùng được ở production.
+// Mặc định @Scheduled chạy một luồng, @Async tạo luồng không giới hạn
 @Configuration
 @EnableAsync
 @EnableScheduling
@@ -38,8 +34,7 @@ public class AsyncConfig implements AsyncConfigurer {
         this.properties = properties;
     }
 
-    // Bể luồng để crawl. Mỗi tác vụ là một TÀI KHOẢN, phần lớn thời gian là ngồi chờ mạng
-    // chứ không tính toán, nên số luồng đặt cao hơn số nhân CPU vẫn có lợi.
+    // Bể luồng để crawl.
     @Bean(name = CRAWL_EXECUTOR)
     public ThreadPoolTaskExecutor socialCrawlExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -51,7 +46,6 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setThreadNamePrefix("crawl-");
 
         // Hàng đợi đầy thì chạy ngay trên luồng gọi: job chậm lại nhưng không mất bài nào.
-        // Mặc định của JDK là AbortPolicy — ném lỗi và bỏ luôn tác vụ đó.
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
 
         // Tắt ứng dụng thì chờ việc đang chạy xong rồi mới dừng, tránh ghi dở dang vào DB.
@@ -78,11 +72,7 @@ public class AsyncConfig implements AsyncConfigurer {
         return socialCrawlExecutor();
     }
 
-    // Lưới an toàn cho ngoại lệ trong luồng nền.
-    //
-    // Đây là điểm mấu chốt của xử lý lỗi đa luồng: ngoại lệ ném ra từ một phương thức @Async
-    // trả về void KHÔNG quay lại được luồng gọi — không có handler thì nó biến mất không dấu vết.
-    // Job đã bắt lỗi theo từng tài khoản rồi; chỗ này bắt những gì lọt qua.
+    // Ngoại lệ từ @Async trả void không quay lại luồng gọi
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return new LoggingAsyncExceptionHandler();

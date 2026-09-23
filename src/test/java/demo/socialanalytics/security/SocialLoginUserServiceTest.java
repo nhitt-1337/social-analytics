@@ -21,10 +21,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 // Kiểm tra phần "lưu thông tin user" khi đăng nhập.
-//
-// loadUser() gọi ra mạng để lấy user-info nên không test trực tiếp được ở mức unit; phần đó đã
-// được phủ bởi SocialUserAttributesTest (đọc JSON) và OAuth2LoginTest (cấu hình). Ở đây gọi
-// thẳng vào bước upsert — chỗ chứa toàn bộ quyết định tạo mới / cập nhật / gắn tài khoản.
 @ExtendWith(MockitoExtension.class)
 class SocialLoginUserServiceTest {
 
@@ -44,8 +40,7 @@ class SocialLoginUserServiceTest {
         });
     }
 
-    // upsert là private; gọi qua Reflection để test được quyết định nghiệp vụ mà không phải
-    // nới quyền truy cập của phương thức chỉ vì mục đích test.
+    // upsert là private; gọi qua Reflection để test được quyết định nghiệp vụ mà không phải nới
     private User upsert(SocialUserAttributes social) {
         try {
             Method method = SocialLoginUserService.class
@@ -86,7 +81,7 @@ class SocialLoginUserServiceTest {
     }
 
     @Test
-    void dangNhapLanSauThiCapNhatHoSoChuKhongTaoMoi() {
+    void dangNhapLanSauThiCapNhatHoSo() {
         User existing = new User();
         ReflectionTestUtils.setField(existing, "id", 7L);
         existing.setProvider(AuthProvider.FACEBOOK);
@@ -137,8 +132,7 @@ class SocialLoginUserServiceTest {
         verify(userRepository, never()).findByEmail(any());
     }
 
-    // Đã có sẵn tài khoản LOCAL cùng email -> gắn danh tính Facebook vào chính tài khoản đó.
-    // Nếu tạo tài khoản thứ hai thì cột email (unique) sẽ chặn.
+    // Đã có sẵn tài khoản LOCAL cùng email -> gắn danh tính Facebook vào chính tài khoản đó
     @Test
     void ganDanhTinhVaoTaiKhoanLocalCungEmail() {
         User local = new User();
@@ -159,8 +153,7 @@ class SocialLoginUserServiceTest {
         assertThat(result.getRole()).isEqualTo(Role.ADMIN);
     }
 
-    // Email đó đã thuộc về một tài khoản mạng xã hội KHÁC -> không gắn đè, tạo tài khoản riêng.
-    // Gắn bừa ở đây là mở đường chiếm tài khoản.
+    // Email đó đã thuộc về một tài khoản mạng xã hội KHÁC -> không gắn đè, tạo tài khoản riêng
     @Test
     void khongGanDeLenTaiKhoanDaLienKetNhaCungCapKhac() {
         User other = new User();

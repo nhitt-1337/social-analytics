@@ -17,10 +17,7 @@ import java.nio.charset.StandardCharsets;
 import static org.springframework.ws.test.server.RequestCreators.withPayload;
 import static org.springframework.ws.test.server.ResponseMatchers.*;
 
-// Phía TẠO endpoint SOAP.
-//
-// MockWebServiceClient gửi thẳng payload vào MessageDispatcher, bỏ qua HTTP — đúng phần cần
-// kiểm: định tuyến theo @PayloadRoot và việc dịch XML sang đối tượng rồi ngược lại.
+// Gửi thẳng payload vào MessageDispatcher, bỏ qua HTTP
 @SpringBootTest
 @ActiveProfiles("test")
 class SocialAnalyticsEndpointTest {
@@ -117,10 +114,9 @@ class SocialAnalyticsEndpointTest {
             .andExpect(clientOrSenderFault());
     }
 
-    // Định tuyến SOAP dựa trên TÊN PHẦN TỬ GỐC kèm namespace, không dựa trên URL.
-    // Sai namespace là không endpoint nào khớp — request không tới được chỗ xử lý.
+    // Định tuyến SOAP dựa trên TÊN PHẦN TỬ GỐC kèm namespace, không dựa trên URL
     @Test
-    void namespaceSaiThiKhongEndpointNaoKhop() {
+    void namespaceSaiKhongKhopEndpoint() {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 client.sendRequest(withPayload(xml("""
                     <getExchangeRateRequest xmlns="http://sai/namespace">

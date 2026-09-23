@@ -21,8 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CrawlController {
 
     private final CrawlStatusService crawlStatusService;
-    // ObjectProvider: job bị tắt bằng social.crawl.enabled=false thì bean không tồn tại,
-    // nhưng các endpoint xem trạng thái vẫn phải dùng được.
+    // ObjectProvider: job bị tắt bằng social.crawl.enabled=false thì bean không tồn tại
     private final ObjectProvider<SocialMetricsUpdateJob> job;
 
     public CrawlController(CrawlStatusService crawlStatusService, ObjectProvider<SocialMetricsUpdateJob> job) {

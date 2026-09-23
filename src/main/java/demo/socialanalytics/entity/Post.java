@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 // Bài viết trên mạng xã hội cần theo dõi tương tác.
-// externalId là id của bài trên chính nền tảng đó; cặp (platform, external_id) duy nhất để
-// import Excel nhiều lần không tạo bản ghi trùng.
 @Getter
 @Entity
 @Table(

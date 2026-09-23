@@ -67,8 +67,7 @@ public class ReportExportService {
         return "bao-cao-tuong-tac-" + LocalDateTime.now().format(FILE_STAMP) + ".xlsx";
     }
 
-    // Một truy vấn cho tất cả bài; kết quả đã sắp giảm dần nên bản ghi ĐẦU TIÊN của mỗi
-    // postId chính là lần đo gần nhất -> putIfAbsent là đủ.
+    // Một truy vấn cho tất cả bài
     private Map<Long, SocialMetric> loadLatestMetrics(List<Post> posts) {
         Map<Long, SocialMetric> latest = new HashMap<>();
         if (posts.isEmpty()) {
@@ -81,8 +80,7 @@ public class ReportExportService {
         return latest;
     }
 
-    // metric null khi bài chưa được crawl lần nào -> các cột chỉ số để trống thay vì ghi 0,
-    // tránh nhầm "chưa đo" với "đo được 0".
+    // metric null khi bài chưa được crawl lần nào -> các cột chỉ số để trống thay vì ghi 0
     private PostReportRow toRow(Post post, SocialMetric metric) {
         return new PostReportRow(
             post.getId(),

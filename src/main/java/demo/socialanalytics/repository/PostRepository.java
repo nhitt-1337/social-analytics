@@ -35,8 +35,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     Optional<Post> findByPlatformAndExternalId(Platform platform, String externalId);
 
-    // Import Excel: lấy một lượt các bài đã tồn tại trong số externalId sắp nhập,
-    // thay vì hỏi DB cho từng dòng.
+    // Import Excel: lấy một lượt các bài đã tồn tại trong số externalId sắp nhập
     @Query("select new demo.socialanalytics.repository.projection.PostIdentity(p.platform, p.externalId) "
         + "from Post p where p.externalId in :externalIds")
     List<PostIdentity> findIdentitiesByExternalIdIn(@Param("externalIds") Collection<String> externalIds);
@@ -55,7 +54,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<PlatformCount> countGroupedByPlatform();
 
     // Export báo cáo: lọc theo nền tảng và khoảng thời gian ĐĂNG BÀI; tham số nào null thì bỏ qua.
-    // Bài chưa có postedAt sẽ không lọt vào khi người dùng truyền from/to.
     @Query("""
         select p from Post p join fetch p.user
         where (:platform is null or p.platform = :platform)

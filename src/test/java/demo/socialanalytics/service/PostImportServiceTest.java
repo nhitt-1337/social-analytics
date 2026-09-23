@@ -38,9 +38,6 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.*;
 
 // Unit test cho luồng import.
-//
-// Repository được mock, nhưng ExcelMapper dùng bản THẬT với file .xlsx dựng trong bộ nhớ:
-// đây chính là phần dễ sai nhất (đọc ô, ép kiểu), mock nó đi thì test mất ý nghĩa.
 @ExtendWith(MockitoExtension.class)
 class PostImportServiceTest {
 
@@ -125,8 +122,7 @@ class PostImportServiceTest {
         assertThat(capturedSaved()).extracting(Post::getExternalId).containsExactly("fb-002");
     }
 
-    // Cùng một bài xuất hiện hai lần TRONG CHÍNH FILE cũng phải bị chặn, nếu không
-    // saveAll sẽ đụng unique constraint và hỏng cả transaction.
+    // Cùng một bài xuất hiện hai lần TRONG CHÍNH FILE cũng phải bị chặn, nếu không saveAll sẽ đụng
     @Test
     void boQuaDongTrungLapBenTrongCungMotFile() {
         ownerExists();
@@ -178,10 +174,8 @@ class PostImportServiceTest {
     }
 
     // Dòng trùng nằm SAU một dòng lỗi phải được báo đúng số dòng trong file.
-    // Trước đây số dòng bị suy ra từ vị trí trong danh sách dòng hợp lệ nên các dòng lỗi
-    // phía trên làm lệch kết quả (dòng 6 bị báo thành dòng 4).
     @Test
-    void baoDungSoDongChoDongTrungNamSauDongLoi() {
+    void dungSoDongKhiCoDongLoi() {
         ownerExists();
         noExistingPosts();
         byte[] file = ExcelTestFiles.postsFile(List.of(
@@ -205,7 +199,7 @@ class PostImportServiceTest {
     }
 
     @Test
-    void chiHoiDatabaseMotLanChoCaFile() {
+    void chiHoiDatabaseMotLan() {
         ownerExists();
         noExistingPosts();
         byte[] file = ExcelTestFiles.postsFile(List.of(
@@ -251,7 +245,7 @@ class PostImportServiceTest {
     }
 
     @Test
-    void nguoiDungKhongTonTaiThiBaoLoiTruocKhiDocFile() {
+    void nguoiDungKhongTonTai() {
         when(userRepository.findById(404L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> importService.importPosts(upload(ExcelTestFiles.postsFile(List.of())), 404L))
@@ -263,7 +257,7 @@ class PostImportServiceTest {
 
     // Phát sự kiện với ĐÚNG số liệu tóm tắt; ImportCompletedProducer mới là nơi đẩy lên hàng đợi.
     @Test
-    void phatSuKienImportCompletedKemSoLieuTomTat() {
+    void phatSuKienImportCompleted() {
         ownerExists();
         noExistingPosts();
         byte[] file = ExcelTestFiles.postsFile(List.of(

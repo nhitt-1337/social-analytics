@@ -5,10 +5,6 @@ import demo.socialanalytics.excel.ExcelColumn;
 import java.time.LocalDateTime;
 
 // Một dòng trong file báo cáo xuất ra. Chỉ ghi nên dùng record được:
-// ExcelMapper chỉ đọc field (Field.get) chứ không set.
-//
-// Tiêu đề tiếng Việt vì file này người dùng mở ra đọc trực tiếp.
-// Các cột chỉ số lấy từ lần đo GẦN NHẤT của bài; bài chưa crawl lần nào thì để trống.
 public record PostReportRow(
 
     @ExcelColumn(header = "ID", order = 1)

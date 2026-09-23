@@ -53,7 +53,7 @@ class ModelExportControllerIntegrationTest {
     }
 
     @Test
-    void chuaDangNhapThiKhongXuatDuoc() throws Exception {
+    void chuaDangNhapKhongXuatDuoc() throws Exception {
         mvc.perform(api("/export/posts").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isUnauthorized());
     }
@@ -100,7 +100,7 @@ class ModelExportControllerIntegrationTest {
 
     @Test
     @WithMockUser
-    void modelKhongTonTaiThiTraVe400KemDanhSachChoPhep() throws Exception {
+    void modelKhongTonTaiThiTraVe400() throws Exception {
         mvc.perform(api("/export/khong-co-model-nay").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.message")

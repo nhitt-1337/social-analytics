@@ -40,8 +40,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 // Unit test cho PostService: repository được thay bằng mock nên không cần DB, chạy trong mili giây.
-// Mapper dùng bản THẬT vì nó là logic chuyển đổi thuần — mock nó đi thì test không còn kiểm tra
-// được response trả ra có đúng dữ liệu hay không.
 @ExtendWith(MockitoExtension.class)
 class PostServiceTest {
 
@@ -111,7 +109,7 @@ class PostServiceTest {
         }
 
         @Test
-        void nenTangKhongHopLeThiBaoLoi() {
+        void nenTangKhongHopLe() {
             assertThatThrownBy(() -> postService.list("instagram", 1, 20))
                 .isInstanceOf(InvalidRequestParameterException.class)
                 .hasMessageContaining("instagram");
@@ -148,7 +146,7 @@ class PostServiceTest {
         }
 
         @Test
-        void khongTimThayThiBaoLoi() {
+        void khongTimThay() {
             when(postRepository.findWithUserById(404L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> postService.getById(404L))
@@ -184,7 +182,7 @@ class PostServiceTest {
         }
 
         @Test
-        void trungCapPlatformVaExternalIdThiBaoLoiVaKhongLuu() {
+        void trungCapPlatformVaExternalId() {
             when(postRepository.existsByPlatformAndExternalId(Platform.FACEBOOK, "fb-001")).thenReturn(true);
 
             assertThatThrownBy(() -> postService.create(request("facebook", "fb-001")))
@@ -196,7 +194,7 @@ class PostServiceTest {
         }
 
         @Test
-        void nguoiDungKhongTonTaiThiBaoLoiVaKhongLuu() {
+        void nguoiDungKhongTonTai() {
             when(postRepository.existsByPlatformAndExternalId(any(), any())).thenReturn(false);
             when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -251,7 +249,7 @@ class PostServiceTest {
         }
 
         @Test
-        void khongTimThayThiBaoLoi() {
+        void khongTimThay() {
             when(postRepository.findWithUserById(404L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> postService.update(404L, request("facebook", "x")))
@@ -273,7 +271,7 @@ class PostServiceTest {
         }
 
         @Test
-        void khongTimThayThiBaoLoiVaKhongXoa() {
+        void khongTimThay() {
             when(postRepository.findById(anyLong())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> postService.delete(404L))

@@ -16,16 +16,7 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import java.util.ArrayList;
 import java.util.List;
 
-// Dựng danh sách nhà cung cấp Social Login TỪ CODE thay vì khai trong
-// spring.security.oauth2.client.registration.*
-//
-// Lý do: khai trong yaml thì mọi provider viết ở đó luôn được đăng ký, kể cả khi chưa có
-// client id. Trang đăng nhập sẽ hiện nút dẫn thẳng tới trang lỗi của Facebook/X.
-// (Đặt mặc định `${FACEBOOK_CLIENT_ID:#{null}}` cũng không cứu được: @ConfigurationProperties
-// KHÔNG đánh giá SpEL, nên `#{null}` bị dùng làm client id nguyên văn.)
-//
-// Ở đây chỉ provider nào có đủ client id + secret mới được đăng ký. Không có cái nào thì bean
-// này không tồn tại -> SecurityConfig bỏ qua phần oauth2Login và app vẫn chạy bình thường.
+// @ConfigurationProperties không đánh giá SpEL nên ${VAR:#{null}} vô tác dụng
 @Configuration
 @EnableConfigurationProperties(SocialLoginProperties.class)
 @ConditionalOnExpression(
@@ -45,8 +36,7 @@ public class SocialLoginClientRegistrations {
             registrations.add(x(properties.x()));
         }
         if (registrations.isEmpty()) {
-            // Có client id nhưng thiếu secret -> nói thẳng, đừng để người dùng đoán vì sao
-            // nút đăng nhập biến mất.
+            // Có client id nhưng thiếu secret -> nói thẳng
             throw new IllegalStateException(
                 "Social Login cần CẢ client-id và client-secret. Kiểm tra FACEBOOK_CLIENT_SECRET "
                     + "hoặc X_CLIENT_SECRET.");
@@ -58,8 +48,6 @@ public class SocialLoginClientRegistrations {
     }
 
     // Lưu token xuống DB thay cho bản in-memory mặc định của Spring Security.
-    // Khai ở đây vì nó cần ClientRegistrationRepository ở trên; chưa cấu hình Social Login thì
-    // cả hai cùng không tồn tại và app vẫn chạy bình thường.
     @Bean
     public JpaOAuth2AuthorizedClientService jpaOAuth2AuthorizedClientService(
         AuthorizedClientJpaRepository authorizedClientJpaRepository,
@@ -69,10 +57,7 @@ public class SocialLoginClientRegistrations {
             authorizedClientJpaRepository, clientRegistrationRepository);
     }
 
-    // Provider dựng sẵn của Spring Security trỏ vào Graph API v2.8 (bản từ 2016). Facebook hiện
-    // vẫn định tuyến được, nhưng bám vào một bản đã bỏ 9 năm là chuyện sớm muộn sẽ hỏng.
-    // Dùng endpoint KHÔNG ghi phiên bản: Facebook tự định tuyến sang bản hỗ trợ cũ nhất, nên
-    // không có con số nào để cũ đi theo thời gian.
+    // Endpoint không ghi phiên bản: Facebook tự định tuyến, không cũ đi theo thời gian
     private ClientRegistration facebook(SocialLoginProperties.Credentials credentials) {
         return CommonOAuth2Provider.FACEBOOK.getBuilder("facebook")
             .clientId(credentials.clientId())
@@ -81,8 +66,7 @@ public class SocialLoginClientRegistrations {
             .scope(credentials.scopes().toArray(String[]::new))
             .authorizationUri("https://www.facebook.com/dialog/oauth")
             .tokenUri("https://graph.facebook.com/oauth/access_token")
-            // Xin luôn ảnh đại diện. Tự ghép URL graph.facebook.com/{id}/picture mà không kèm
-            // access token thì Facebook trả về ảnh silhouette xám cho mọi người.
+            // Xin luôn ảnh đại diện.
             .userInfoUri("https://graph.facebook.com/me?fields=id,name,email,picture.type(large)")
             .userNameAttributeName("id")
             .build();

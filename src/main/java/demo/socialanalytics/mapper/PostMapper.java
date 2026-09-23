@@ -17,7 +17,6 @@ public class PostMapper {
     }
 
     // latestMetric do service truyền vào (null nếu bài chưa có lần đo nào) thay vì đọc
-    // post.getMetrics() — collection LAZY đó sẽ gây N+1 khi liệt kê nhiều bài.
     public PostResponse toResponse(Post post, SocialMetric latestMetric) {
         MetricResponse metric = latestMetric == null ? null : metricMapper.toResponse(latestMetric);
         return new PostResponse(

@@ -29,11 +29,7 @@ public class StatisticsService {
         this.summaryRepository = summaryRepository;
     }
 
-    // TÍNH LẠI TỪ ĐẦU chứ không cộng dồn vào số cũ.
-    //
-    // Nhờ vậy việc xử lý cùng một message hai lần cho ra đúng một kết quả — điều bắt buộc với
-    // hàng đợi, vì JMS chỉ bảo đảm "ít nhất một lần": broker giao lại khi listener đang xử lý
-    // dở mà mất kết nối, dù lần trước có thể đã chạy xong.
+    // JMS chỉ bảo đảm 'ít nhất một lần' nên tính lại từ đầu, không cộng dồn
     @Transactional
     public List<PlatformSummary> refresh() {
         Map<Platform, PlatformCount> counts = new EnumMap<>(Platform.class);
@@ -43,8 +39,7 @@ public class StatisticsService {
         LocalDateTime now = LocalDateTime.now();
         List<PlatformSummary> result = new java.util.ArrayList<>();
 
-        // Duyệt qua MỌI nền tảng, không chỉ những nền tảng đang có bài: xoá hết bài của một nền
-        // tảng thì số liệu của nó phải về 0, chứ không được giữ nguyên con số cũ.
+        // Duyệt qua MỌI nền tảng
         for (Platform platform : Platform.values()) {
             PlatformSummary summary = summaryRepository.findByPlatform(platform)
                 .orElseGet(() -> {

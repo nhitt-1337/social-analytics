@@ -114,10 +114,9 @@ class SocialMetricsUpdateJobTest {
         verify(broadcaster).chartUpdated(any());
     }
 
-    // Không bài nào cập nhật được thì biểu đồ chẳng có gì mới để vẽ -> khỏi phát tin và khỏi
-    // tính lại dữ liệu biểu đồ.
+    // Không bài nào cập nhật được thì biểu đồ chẳng có gì mới để vẽ -> khỏi phát tin và khỏi tính
     @Test
-    void khongCoBaiNaoThanhCongThiKhongPhatDuLieuBieuDo() {
+    void khongCoBaiNaoThanhCongThiKhongPhat() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
         accountReturns(1L, 2, 0, 2);
 
@@ -130,7 +129,7 @@ class SocialMetricsUpdateJobTest {
 
     // Lỗi khi phát tin realtime KHÔNG được làm hỏng kết quả lần crawl.
     @Test
-    void loiPhatTinKhongLamHongKetQuaCrawl() {
+    void loiPhatTinKhongLamHongCrawl() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
         accountReturns(1L, 2, 2, 0);
         when(chartDataService.chartData(null, null))
@@ -140,7 +139,7 @@ class SocialMetricsUpdateJobTest {
     }
 
     @Test
-    void khongCoBaiVietNaoThiVanGhiMotLanChayThanhCong() {
+    void khongCoBaiVietVanGhiLanChay() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of());
 
         CrawlRun run = job.runOnce();
@@ -151,8 +150,7 @@ class SocialMetricsUpdateJobTest {
         verifyNoInteractions(collector);
     }
 
-    // Ghi một dòng RUNNING trước, cập nhật lại khi xong: dashboard nhìn thấy job đang chạy
-    // chứ không phải chờ tới lúc kết thúc mới có gì để hiện.
+    // Ghi một dòng RUNNING trước, cập nhật lại khi xong: dashboard nhìn thấy job đang chạy chứ
     @Test
     void ghiTrangThaiRunningTruocRoiCapNhatSau() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -164,10 +162,9 @@ class SocialMetricsUpdateJobTest {
         verify(crawlRunRepository, times(2)).save(any(CrawlRun.class));
     }
 
-    // Đây là điểm mấu chốt của đa luồng: phải GIAO HẾT việc rồi mới chờ.
-    // Gọi .get() ngay trong vòng lặp thì hoá ra chạy tuần tự.
+    // Đây là điểm mấu chốt của đa luồng: phải GIAO HẾT việc rồi mới chờ
     @Test
-    void giaoHetViecRoiMoiChoChuKhongChoTungCai() {
+    void giaoHetViecRoiMoiCho() {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L, 2L, 3L, 4L));
 
         AtomicInteger dangChay = new AtomicInteger();
@@ -182,8 +179,7 @@ class SocialMetricsUpdateJobTest {
                 dinhCaoDongThoi.accumulateAndGet(hienTai, Math::max);
                 tatCaDaVao.countDown();
                 try {
-                    // Không thoát ra cho tới khi cả 4 tác vụ cùng vào được đây.
-                    // Nếu job chờ từng cái một thì đây là chỗ nó treo cứng.
+                    // Không thoát ra cho tới khi cả 4 tác vụ cùng vào được đây
                     tatCaDaVao.await(2, TimeUnit.SECONDS);
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
@@ -200,10 +196,9 @@ class SocialMetricsUpdateJobTest {
         assertThat(run.getSucceededPosts()).isEqualTo(4);
     }
 
-    // Lần chạy thứ hai bị bỏ qua khi lần đầu chưa xong — nút "chạy ngay" có thể bấm trúng lúc
-    // job định kỳ đang chạy.
+    // Lần chạy thứ hai bị bỏ qua khi lần đầu chưa xong — nút "chạy ngay" có thể bấm trúng lúc job
     @Test
-    void khongChoHaiLanChayChongLenNhau() throws Exception {
+    void khongChayChongLenNhau() throws Exception {
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
         CountDownLatch dangChay = new CountDownLatch(1);
         CountDownLatch choThaRa = new CountDownLatch(1);
@@ -232,7 +227,7 @@ class SocialMetricsUpdateJobTest {
 
     // Quá hạn thì bỏ dở phần còn lại và vẫn ghi lại lần chạy, thay vì treo mãi.
     @Test
-    void quaThoiGianChoPhepThiBoDoVaVanGhiLai() {
+    void quaThoiGianThiBoDo() {
         job = newJob(1);
         when(crawlRunRepository.save(any(CrawlRun.class))).thenAnswer(i -> i.getArgument(0));
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));
@@ -247,7 +242,7 @@ class SocialMetricsUpdateJobTest {
 
     // Sau một lần quá hạn, job vẫn phải chạy được lần sau (cờ running được thả trong finally).
     @Test
-    void vanChayDuocSauKhiLanTruocQuaHan() {
+    void chayDuocSauKhiQuaHan() {
         job = newJob(1);
         when(crawlRunRepository.save(any(CrawlRun.class))).thenAnswer(i -> i.getArgument(0));
         when(postRepository.findDistinctUserIds()).thenReturn(List.of(1L));

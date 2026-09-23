@@ -76,7 +76,7 @@ class MetricServiceTest {
 
         // Kiểm tra bài viết tồn tại TRƯỚC, để 404 chứ không trả danh sách rỗng gây hiểu nhầm.
         @Test
-        void baiVietKhongTonTaiThiBaoLoiVaKhongTruyVanMetric() {
+        void baiVietKhongTonTai() {
             when(postRepository.existsById(404L)).thenReturn(false);
 
             assertThatThrownBy(() -> metricService.listByPost(404L, 1, 20))
@@ -143,7 +143,7 @@ class MetricServiceTest {
         }
 
         @Test
-        void baiVietKhongTonTaiThiBaoLoi() {
+        void khongTimThayBaiViet() {
             when(postRepository.existsById(404L)).thenReturn(false);
 
             assertThatThrownBy(() -> metricService.timeSeries(404L, null, null))
@@ -180,8 +180,7 @@ class MetricServiceTest {
             assertThat(result.postId()).isEqualTo(10L);
         }
 
-        // comments là trường duy nhất cho phép bỏ trống -> phải quy về 0, không để null
-        // vì cột trong DB là NOT NULL.
+        // comments là trường duy nhất cho phép bỏ trống -> phải quy về 0, không để null vì cột trong
         @Test
         void commentsBoTrongThiQuyVe0() {
             when(postRepository.findById(10L)).thenReturn(Optional.of(post));
@@ -195,7 +194,7 @@ class MetricServiceTest {
         }
 
         @Test
-        void baiVietKhongTonTaiThiBaoLoiVaKhongLuu() {
+        void baiVietKhongTonTai() {
             when(postRepository.findById(404L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> metricService.record(
@@ -239,7 +238,7 @@ class MetricServiceTest {
         }
 
         @Test
-        void deleteKhongTimThayThiBaoLoiVaKhongXoa() {
+        void deleteKhongTimThay() {
             when(metricRepository.findById(404L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> metricService.delete(404L))

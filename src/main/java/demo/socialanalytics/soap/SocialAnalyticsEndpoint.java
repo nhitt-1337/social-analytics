@@ -15,8 +15,7 @@ import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
 
 import java.time.LocalDateTime;
 
-// Endpoint SOAP. Tương đương @RestController nhưng định tuyến theo TÊN PHẦN TỬ GỐC của body XML
-// (@PayloadRoot) chứ không theo URL — mọi lời gọi SOAP đều tới cùng một địa chỉ /soap.
+// Endpoint SOAP.
 @Endpoint
 public class SocialAnalyticsEndpoint {
 
@@ -48,8 +47,7 @@ public class SocialAnalyticsEndpoint {
         return response;
     }
 
-    // Dịch vụ tỷ giá giả lập, đóng vai nhà cung cấp SOAP bên ngoài để bản demo chạy được
-    // khi không có mạng.
+    // Dịch vụ tỷ giá giả lập
     @PayloadRoot(namespace = WebServiceConfig.NAMESPACE, localPart = "getExchangeRateRequest")
     @ResponsePayload
     public GetExchangeRateResponse getExchangeRate(@RequestPayload GetExchangeRateRequest request) {

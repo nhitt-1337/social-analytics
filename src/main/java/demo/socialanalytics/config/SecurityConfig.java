@@ -35,21 +35,12 @@ import java.util.Set;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // Đường dẫn công khai: trang đăng nhập, hai endpoint do Spring Security dựng sẵn cho
-    // luồng OAuth2, tài nguyên tĩnh và tài liệu API.
+    // Đường dẫn công khai: trang đăng nhập
     private static final String[] PUBLIC_PATHS = {
         "/login", "/error", "/css/**", "/js/**", "/favicon.ico",
         "/oauth2/**", "/login/oauth2/**",
         "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**",
-        // Endpoint SOAP để công khai — ĐÂY LÀ MỘT ĐÁNH ĐỔI CÓ CHỦ Ý, không phải sơ suất.
-        //
-        // Client SOAP là máy gọi máy, không có phiên đăng nhập trình duyệt; để sau lớp form
-        // login thì mọi client (kể cả ExchangeRateClient của chính ứng dụng này) chỉ nhận về
-        // trang đăng nhập chứ không gọi được.
-        //
-        // Chấp nhận được vì bề mặt SOAP chỉ lộ SỐ LIỆU GỘP (số bài, số tài khoản theo nền tảng)
-        // và tỷ giá — không có dữ liệu cá nhân, không có nội dung bài viết, không có token.
-        // Triển khai thật thì phải bọc bằng WS-Security hoặc chặn ở tầng mạng.
+        // Công khai vì client SOAP không có phiên đăng nhập; chỉ lộ số liệu gộp
         WebServiceConfig.PATH + "/**"
     };
 
@@ -58,33 +49,20 @@ public class SecurityConfig {
         HttpSecurity http,
         SocialLoginUserService socialLoginUserService,
         // ObjectProvider: chưa cấu hình client id/secret thì Spring Boot không tạo
-        // ClientRegistrationRepository. Lấy kiểu "có thì dùng" để app vẫn chạy được khi
-        // chưa khai báo Social Login, thay vì chết ngay lúc khởi động.
         ObjectProvider<ClientRegistrationRepository> clientRegistrations
     ) throws Exception {
 
         http
             // CSRF BẬT (mặc định của Spring Security, ở đây khai báo tường minh cho rõ ý).
-            // Token để trong cookie XSRF-TOKEN không đặt HttpOnly để JavaScript của dashboard
-            // đọc được mà gắn vào header khi gọi API bằng fetch/axios.
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
-                // Bỏ CSRF cho endpoint SOAP: client SOAP gửi POST và không có khái niệm
-                // token CSRF. Xem ghi chú ở PUBLIC_PATHS về mức bảo vệ của bề mặt này.
+                // Bỏ CSRF cho endpoint SOAP: client SOAP gửi POST và không có khái niệm token CSRF.
                 .ignoringRequestMatchers(WebServiceConfig.PATH + "/**")
                 // Bỏ CSRF cho endpoint WebSocket.
-                //
-                // SockJS khi phải lùi về HTTP sẽ dùng POST cho các khung truyền, mà những POST
-                // đó không kèm được token -> CSRF chặn và kết nối không bao giờ mở được.
-                // Endpoint này vẫn được bảo vệ bằng hai lớp khác: phải đăng nhập mới vào được
-                // (anyRequest().authenticated()) và chỉ nhận kết nối từ cùng nguồn gốc
-                // (setAllowedOriginPatterns trong WebSocketConfig).
                 .ignoringRequestMatchers(WebSocketConfig.ENDPOINT + "/**"))
 
-            // Từ Spring Security 6, token CSRF được nạp lười — không chỗ nào đọc tới thì cookie
-            // không bao giờ được gửi về trình duyệt. Filter này chạm vào token ở mọi request
-            // để cookie luôn có mặt ngay từ lần tải trang đầu tiên.
+            // Từ Spring Security 6 token CSRF nạp lười: không chạm tới thì cookie không được gửi
             .addFilterAfter(new CsrfCookieFilter(), org.springframework.security.web.csrf.CsrfFilter.class)
 
             .authorizeHttpRequests(auth -> auth
@@ -111,8 +89,7 @@ public class SecurityConfig {
         try {
             http.oauth2Login(oauth2 -> oauth2
                 .loginPage("/login")
-                // Đăng nhập xong về thẳng dashboard. `true` để luôn về dashboard, kể cả khi
-                // người dùng bấm đăng nhập từ một trang khác.
+                // Đăng nhập xong về thẳng dashboard.
                 .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/login?error")
                 .authorizationEndpoint(endpoint -> endpoint
@@ -123,25 +100,9 @@ public class SecurityConfig {
         }
     }
 
-    // Bật PKCE cho luồng authorization code.
-    //
-    // Spring Security chỉ tự bật PKCE cho client kiểu "none" (không có client secret).
-    // X/Twitter dùng client secret nhưng VẪN bắt buộc PKCE, nên phải bật tay ở đây.
-    // Facebook cũng hỗ trợ PKCE nên bật chung cho cả hai, không hại gì.
-    // Chưa đăng nhập thì trả về cái gì, tuỳ theo bên gọi là client API hay trình duyệt.
-    //
-    // Tự dựng DelegatingAuthenticationEntryPoint thay vì dùng defaultAuthenticationEntryPointFor():
-    // hễ gọi authenticationEntryPoint() để đặt mặc định thì Spring BỎ QUA toàn bộ các mapping
-    // khai bằng defaultAuthenticationEntryPointFor(), nên trộn hai cách là mất phần phân biệt.
-    //
-    // Đặt mặc định tường minh chứ không dựa vào oauth2Login(): chưa cấu hình Social Login thì
-    // oauth2Login không được gọi, khi đó Spring dùng entry point mặc định trả 401 và người dùng
-    // không mở nổi trang /login để đọc hướng dẫn cấu hình.
     private AuthenticationEntryPoint authenticationEntryPoint() {
         MediaTypeRequestMatcher jsonRequest = new MediaTypeRequestMatcher(MediaType.APPLICATION_JSON);
-        // Bỏ qua */*: trình duyệt luôn gửi kèm "*/*;q=0.8" ở cuối header Accept, mà */* thì
-        // "tương thích" với application/json. Không loại ra thì mở trang bằng trình duyệt cũng
-        // bị coi là gọi API và nhận 401 thay vì được chuyển tới trang đăng nhập.
+        // Bỏ */*: trình duyệt luôn gửi kèm, không loại thì mở trang cũng bị coi là gọi API
         jsonRequest.setIgnoredMediaTypes(Set.of(MediaType.ALL));
 
         LinkedHashMap<org.springframework.security.web.util.matcher.RequestMatcher, AuthenticationEntryPoint>

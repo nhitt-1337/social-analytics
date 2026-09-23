@@ -6,9 +6,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 
 // Dựng sẵn entity cho test.
-//
-// id và createdAt/updatedAt do JPA sinh nên entity không có setter cho chúng; ở unit test
-// không có JPA nên phải gán bằng Reflection. Gom vào đây để các test khỏi lặp lại.
 public final class TestEntities {
 
     private TestEntities() {

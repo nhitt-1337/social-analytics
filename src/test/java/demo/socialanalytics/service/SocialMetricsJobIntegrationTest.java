@@ -21,9 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Chạy job thật: qua ThreadPoolTaskExecutor thật, ghi vào DB thật (H2).
-//
-// Bật bean job bằng properties (profile test tắt sẵn để lịch tự động không giẫm lên các test khác)
-// và cho client giả lập chạy không độ trễ, không lỗi ngẫu nhiên để kết quả xác định.
 @SpringBootTest(properties = {
     "social.crawl.enabled=true",
     // Lịch tự động lùi thật xa: test tự gọi runOnce(), không muốn job tự chạy chen vào.
@@ -39,8 +36,7 @@ class SocialMetricsJobIntegrationTest {
     // Tên các luồng đã thực sự gọi API, ghi lại để kiểm tra phần chạy song song.
     static final Set<String> crawlThreadNames = ConcurrentHashMap.newKeySet();
 
-    // Thay client giả lập mặc định bằng bản có ghi lại tên luồng. Vẫn trả số liệu hợp lệ
-    // nên các test khác trong class không bị ảnh hưởng.
+    // Thay client giả lập mặc định bằng bản có ghi lại tên luồng
     @TestConfiguration
     static class ThreadRecordingClient {
         @Bean
@@ -102,8 +98,7 @@ class SocialMetricsJobIntegrationTest {
         });
     }
 
-    // Chạy hai lần thì mỗi bài có hai dòng lịch sử — chỉ số lưu theo chuỗi thời gian,
-    // không ghi đè.
+    // Chạy hai lần thì mỗi bài có hai dòng lịch sử — chỉ số lưu theo chuỗi thời gian, không ghi đè.
     @Test
     void chayNhieuLanThiCongDonLichSuChuKhongGhiDe() {
         User owner = saveUser("a@example.com");
@@ -132,10 +127,8 @@ class SocialMetricsJobIntegrationTest {
     }
 
     // Việc phải chạy trên BỂ LUỒNG RIÊNG (tiền tố "crawl-" đặt trong AsyncConfig), và nhiều
-    // tài khoản phải rơi vào NHIỀU luồng khác nhau — nếu @Async không ăn thì mọi thứ chạy
-    // ngay trên luồng gọi và cả hai khẳng định dưới đây đều sai.
     @Test
-    void chayTrenBeLuongRiengVaTraiDeuQuaNhieuLuong() {
+    void chayTrenNhieuLuongRieng() {
         for (int i = 1; i <= 4; i++) {
             savePost(saveUser("user" + i + "@example.com"), "fb-" + i);
         }

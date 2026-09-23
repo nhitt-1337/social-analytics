@@ -22,11 +22,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 // Thử lại và hàng đợi thư chết.
-//
-// StatisticsService được thay bằng mock luôn ném lỗi, để buộc message đi hết đường:
-//   giao lần 1 -> lỗi -> giao lại 3 lần -> vẫn lỗi -> broker đẩy sang ActiveMQ.DLQ
-//
-// Rút ngắn giãn cách thử lại xuống 50ms cho test chạy nhanh; ở production là 500ms rồi nhân đôi.
 @SpringBootTest(properties = {
     "social.messaging.max-redeliveries=3",
     "social.messaging.initial-redelivery-delay-ms=50",
@@ -60,11 +55,8 @@ class RetryAndDeadLetterTest {
     }
 
     // Tổng 4 lần xử lý: lần đầu + 3 lần giao lại.
-    //
-    // Điều này chỉ xảy ra khi phiên có transaction (sessionTransacted=true). Để mặc định
-    // AUTO_ACKNOWLEDGE thì message coi như xong ngay lúc giao tới — attempts sẽ đứng ở 1.
     @Test
-    void listenerNemLoiThiMessageDuocGiaoLaiDuSoLanCauHinh() {
+    void nemLoiThiDuocGiaoLai() {
         alwaysFail();
 
         jmsTemplate.convertAndSend(Queues.IMPORT_COMPLETED, message());
@@ -74,7 +66,7 @@ class RetryAndDeadLetterTest {
     }
 
     @Test
-    void thuLaiHetSoLanThiMessageVaoDeadLetterQueue() {
+    void thuLaiHetSoLanThiVaoDlq() {
         alwaysFail();
 
         jmsTemplate.convertAndSend(Queues.IMPORT_COMPLETED, message());
@@ -97,10 +89,9 @@ class RetryAndDeadLetterTest {
         });
     }
 
-    // Lỗi tạm thời: lần đầu hỏng, lần giao lại thành công -> KHÔNG được vào DLQ.
-    // Đây mới là công dụng chính của cơ chế thử lại.
+    // Lỗi tạm thời: lần đầu hỏng, lần giao lại thành công -> KHÔNG được vào DLQ
     @Test
-    void loiTamThoiThiLanThuLaiThanhCongVaKhongVaoDlq() {
+    void loiTamThoiThiThuLaiThanhCong() {
         when(statisticsService.refresh()).thenAnswer(invocation -> {
             if (attempts.incrementAndGet() == 1) {
                 throw new IllegalStateException("lỗi tạm thời");
@@ -120,7 +111,7 @@ class RetryAndDeadLetterTest {
     }
 
     @Test
-    void xuLyBinhThuongThiKhongCoGiVaoDlq() {
+    void xuLyBinhThuongKhongVaoDlq() {
         when(statisticsService.refresh()).thenReturn(List.of());
 
         jmsTemplate.convertAndSend(Queues.IMPORT_COMPLETED, message());
@@ -131,10 +122,9 @@ class RetryAndDeadLetterTest {
             .untilAsserted(() -> assertThat(deadLetters.findAll()).isEmpty());
     }
 
-    // Message hỏng ngay ở khâu chuyển đổi JSON cũng phải vào DLQ chứ không lặp vô hạn.
-    // DeadLetterListener nhận Message thô nên vẫn ghi lại được.
+    // Message hỏng ngay ở khâu chuyển đổi JSON cũng phải vào DLQ chứ không lặp vô hạn
     @Test
-    void messageSaiDinhDangCungVaoDlq() {
+    void messageSaiDinhDangVaoDlq() {
         jmsTemplate.send(Queues.IMPORT_COMPLETED,
             session -> session.createTextMessage("{ đây không phải JSON hợp lệ"));
 

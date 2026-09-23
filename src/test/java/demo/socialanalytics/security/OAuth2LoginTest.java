@@ -14,8 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// Kiểm tra phần cấu hình Social Login. Đặt client id/secret giả qua properties: đủ để Spring Boot
-// tạo ClientRegistration và dựng URL chuyển hướng, không hề gọi ra Internet.
+// Kiểm tra phần cấu hình Social Login
 @SpringBootTest(properties = {
     "social.login.facebook.client-id=test-fb-id",
     "social.login.facebook.client-secret=test-fb-secret",
@@ -48,10 +47,9 @@ class OAuth2LoginTest {
         assertThat(facebook.getScopes()).contains("email", "public_profile");
     }
 
-    // Provider dựng sẵn của Spring Security trỏ vào Graph API v2.8 (bản từ 2016).
-    // application.yaml ghi đè sang endpoint KHÔNG ghi phiên bản để không có con số nào cũ đi.
+    // Provider dựng sẵn của Spring Security trỏ vào Graph API v2.8 (bản từ 2016)
     @Test
-    void khongBamVaoMotPhienBanGraphApiCuThe() {
+    void khongBamVaoPhienBanGraphApi() {
         var provider = clientRegistrations.findByRegistrationId("facebook").getProviderDetails();
 
         assertThat(provider.getAuthorizationUri()).isEqualTo("https://www.facebook.com/dialog/oauth");
@@ -92,7 +90,7 @@ class OAuth2LoginTest {
     // ----- luồng chuyển hướng đi đăng nhập -----
 
     @Test
-    void chuyenHuongSangFacebookKemDungThamSo() throws Exception {
+    void chuyenHuongSangFacebook() throws Exception {
         String redirect = authorizeRedirect("facebook");
 
         assertThat(redirect).startsWith("https://www.facebook.com/");
@@ -102,7 +100,7 @@ class OAuth2LoginTest {
     }
 
     @Test
-    void chuyenHuongSangXKemDungThamSo() throws Exception {
+    void chuyenHuongSangX() throws Exception {
         String redirect = authorizeRedirect("x");
 
         assertThat(redirect).startsWith("https://x.com/i/oauth2/authorize");
@@ -110,9 +108,7 @@ class OAuth2LoginTest {
         assertThat(redirect).contains("scope=users.read");
     }
 
-    // PKCE: X BẮT BUỘC phải có, mà Spring Security chỉ tự bật cho client không có secret.
-    // Đây là phép kiểm cho dòng withPkce() trong SecurityConfig — thiếu nó thì X trả lỗi
-    // ngay ở bước đầu tiên và rất khó lần ra nguyên nhân.
+    // Chạy trên cổng thật để đi qua chuỗi filter của Spring Security
     @Test
     void batPkceChoX() throws Exception {
         String redirect = authorizeRedirect("x");
@@ -127,11 +123,6 @@ class OAuth2LoginTest {
     }
 
     // Gõ nhầm registrationId thì KHÔNG chuyển hướng đi đâu cả.
-    //
-    // Đây là hành vi sẵn có của OAuth2AuthorizationRequestRedirectFilter: nó ném
-    // InvalidClientRegistrationIdException và kết quả là 500. Lỗi này phát sinh trong filter,
-    // nằm ngoài DispatcherServlet nên GlobalExceptionHandler không bắt được.
-    // Ghi lại ở đây để biết đúng hành vi hiện tại, tránh hiểu nhầm là đã xử lý tử tế.
     @Test
     void nhaCungCapChuaKhaiBaoThiKhongChuyenHuongDiDau() throws Exception {
         String path = "/oauth2/authorization/google";

@@ -20,9 +20,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 // Job cập nhật chỉ số mạng xã hội, chạy mỗi 1 giờ.
-//
-// Vai trò ở đây chỉ là ĐIỀU PHỐI: chia việc theo tài khoản, giao cho bể luồng, chờ kết quả rồi
-// ghi lại một dòng lịch sử. Việc gọi API và ghi DB nằm ở SocialMetricsCollector.
 @Component
 @ConditionalOnProperty(name = "social.crawl.enabled", havingValue = "true", matchIfMissing = true)
 public class SocialMetricsUpdateJob {
@@ -37,10 +34,6 @@ public class SocialMetricsUpdateJob {
     private final ChartDataService chartDataService;
 
     // Chặn hai lần chạy chồng lên nhau. fixedDelay đã lo cho lịch tự động, nhưng nút "chạy ngay"
-    // trên dashboard có thể bấm đúng lúc job định kỳ đang chạy.
-    //
-    // Lưu ý: cờ này nằm trong bộ nhớ của một tiến trình. Chạy nhiều instance thì cần khoá dùng
-    // chung (ShedLock hoặc khoá trên DB) — hiện chưa có.
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     public SocialMetricsUpdateJob(
@@ -60,7 +53,6 @@ public class SocialMetricsUpdateJob {
     }
 
     // fixedDelay chứ không phải fixedRate: đếm 1 giờ từ lúc lần trước KẾT THÚC.
-    // Dùng fixedRate mà một lần chạy lâu hơn 1 giờ thì các lần sau dồn cục lên nhau.
     @Scheduled(
         fixedDelayString = "${social.crawl.interval:PT1H}",
         initialDelayString = "${social.crawl.initial-delay:PT1M}")
@@ -69,7 +61,6 @@ public class SocialMetricsUpdateJob {
     }
 
     // Tách khỏi method @Scheduled để dashboard gọi được "chạy ngay" mà không phải đợi tới giờ.
-    // Trả về null khi có một lần chạy khác đang dở.
     public CrawlRun runOnce() {
         if (!running.compareAndSet(false, true)) {
             log.info("Bỏ qua: đang có một lần crawl khác chạy dở");
@@ -95,8 +86,7 @@ public class SocialMetricsUpdateJob {
             return finish(run, List.of(), startedNanos, null, "Không có bài viết nào để cập nhật");
         }
 
-        // Giao hết việc cho bể luồng rồi mới chờ: gọi .get() ngay trong vòng lặp thì hoá ra
-        // chạy tuần tự, mất trắng tác dụng của đa luồng.
+        // Giao hết việc cho bể luồng rồi mới chờ: gọi .get() ngay trong vòng lặp thì hoá ra chạy tuần tự
         List<CompletableFuture<AccountCrawlResult>> futures = userIds.stream()
             .map(collector::collectForAccount)
             .toList();
@@ -131,8 +121,7 @@ public class SocialMetricsUpdateJob {
             .toList();
     }
 
-    // Không @Transactional: gọi từ trong cùng class nên không đi qua proxy, annotation sẽ vô
-    // tác dụng. Ở đây chỉ có đúng một lệnh save nên transaction sẵn có của Spring Data là đủ.
+    // Không @Transactional: gọi từ trong cùng class nên không đi qua proxy
     private CrawlRun startRun(int totalAccounts) {
         CrawlRun run = new CrawlRun();
         run.setStartedAt(LocalDateTime.now());
@@ -141,8 +130,7 @@ public class SocialMetricsUpdateJob {
         return crawlRunRepository.save(run);
     }
 
-    // problem: sự cố, có ảnh hưởng tới trạng thái. note: ghi chú thuần tuý, không ảnh hưởng.
-    // Gộp hai thứ này làm một là cách chắc chắn để "không có gì để làm" bị báo thành "thất bại".
+    // problem: sự cố, có ảnh hưởng tới trạng thái.
     private CrawlRun finish(
         CrawlRun run, List<AccountCrawlResult> results, long startedNanos,
         String problem, String note) {
@@ -168,10 +156,6 @@ public class SocialMetricsUpdateJob {
     }
 
     // Đẩy dữ liệu mới xuống các dashboard đang mở.
-    //
-    // Bọc try/catch quanh CẢ KHỐI, không chỉ dựa vào việc broadcaster tự nuốt lỗi: việc tính
-    // dữ liệu biểu đồ nằm ngoài broadcaster, nó hỏng thì ngoại lệ vẫn thoát ra và làm hỏng
-    // kết quả lần crawl — trong khi chỉ số đã ghi xong xuôi rồi.
     private void notifyDashboards(CrawlRun run, int succeeded) {
         try {
             broadcaster.crawlFinished(CrawlRunResponse.of(run));

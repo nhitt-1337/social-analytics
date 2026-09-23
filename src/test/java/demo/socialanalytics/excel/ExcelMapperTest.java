@@ -22,8 +22,7 @@ class ExcelMapperTest {
 
     // ----- Class dùng làm "vật thí nghiệm" -----
 
-    // Cố tình khai báo field theo thứ tự lộn xộn so với order để chứng minh ExcelMapper
-    // sắp cột theo order chứ không theo thứ tự khai báo.
+    // Cố tình khai báo field theo thứ tự lộn xộn so với order để chứng minh ExcelMapper sắp cột
     static class SampleRow {
         @ExcelColumn(header = "Ngày đo", order = 3)
         private LocalDateTime measuredAt;
@@ -222,8 +221,7 @@ class ExcelMapperTest {
                 .satisfies(row -> assertThat(row.likes).isNull());
         }
 
-        // Mỗi dòng hợp lệ phải mang theo SỐ DÒNG GỐC. Nếu tầng trên tự suy số dòng từ vị trí
-        // trong danh sách thì mọi dòng nằm sau một dòng lỗi sẽ bị báo sai vị trí.
+        // Mỗi dòng hợp lệ phải mang theo SỐ DÒNG GỐC
         @Test
         void moiDongHopLeMangTheoSoDongGocTrongFile() {
             byte[] file = workbook(
@@ -255,7 +253,7 @@ class ExcelMapperTest {
     class Write {
 
         @Test
-        void ghiDongTieuDeTheoDungThuTuOrder() throws Exception {
+        void ghiDongTieuDe() throws Exception {
             byte[] file = mapper.write(List.of(), SampleRow.class, "Bao cao");
 
             try (Workbook book = WorkbookFactory.create(new ByteArrayInputStream(file))) {

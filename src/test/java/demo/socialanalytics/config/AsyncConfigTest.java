@@ -15,8 +15,6 @@ import java.util.concurrent.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Cấu hình bể luồng: để mặc định thì @Scheduled chạy trên MỘT luồng và @Async tạo luồng mới
-// không giới hạn cho từng tác vụ — cả hai đều không dùng được ở production, nên khai báo rõ
-// và có test giữ.
 @SpringBootTest(properties = {
     "social.crawl.pool-size=4",
     "social.crawl.queue-capacity=10"
@@ -40,8 +38,7 @@ class AsyncConfigTest {
     // Bể của @Scheduled phải có nhiều hơn một luồng, nếu không một job chậm sẽ chặn mọi job khác.
     @Test
     void beLuongLichChayCoNhieuHonMotLuong() {
-        // getPoolSize() trả về số luồng ĐANG tồn tại (0 khi chưa có việc nào), không phải
-        // cấu hình -> phải đọc core pool size của executor bên dưới.
+        // getPoolSize() trả về số luồng ĐANG tồn tại (0 khi chưa có việc nào), không phải cấu hình ->
         assertThat(taskScheduler.getScheduledThreadPoolExecutor().getCorePoolSize()).isGreaterThan(1);
         assertThat(taskScheduler.getThreadNamePrefix()).isEqualTo("scheduler-");
     }
@@ -77,16 +74,14 @@ class AsyncConfigTest {
         assertThat(threadName.get(3, TimeUnit.SECONDS)).startsWith("crawl-");
     }
 
-    // Hàng đợi đầy thì tác vụ chạy ngay trên luồng gọi (CallerRunsPolicy) chứ không bị vứt bỏ.
-    // Mặc định của JDK là AbortPolicy — ném lỗi và mất luôn tác vụ đó.
+    // Hàng đợi đầy thì tác vụ chạy ngay trên luồng gọi (CallerRunsPolicy) chứ không bị vứt bỏ
     @Test
     void hangDoiDayThiChayTrenLuongGoiChuKhongVutBo() {
         assertThat(crawlExecutor.getThreadPoolExecutor().getRejectedExecutionHandler())
             .isInstanceOf(ThreadPoolExecutor.CallerRunsPolicy.class);
     }
 
-    // Ngoại lệ từ method @Async trả về void không quay lại được luồng gọi; không có handler
-    // thì nó biến mất không dấu vết.
+    // Ngoại lệ từ method @Async trả về void không quay lại được luồng gọi; không có handler thì nó
     @Test
     void coHandlerChoNgoaiLeKhongDuocXuLyTrongLuongNen() throws Exception {
         AsyncConfig config = new AsyncConfig(new CrawlProperties(

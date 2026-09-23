@@ -7,10 +7,6 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 // Thống kê tổng hợp theo nền tảng, tính sẵn để dashboard khỏi phải COUNT lại mỗi lần mở.
-//
-// Đây là dữ liệu PHÁI SINH — luôn dựng lại được từ bảng posts. Nên nếu listener lỡ chạy hai lần
-// thì kết quả vẫn thế (tính lại từ đầu chứ không cộng dồn), tức là xử lý message trùng
-// không gây sai số.
 @Getter
 @Entity
 @Table(

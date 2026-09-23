@@ -13,13 +13,6 @@ import java.util.List;
 import java.util.Locale;
 
 // Xuất Excel cho MỌI model, không cần model đó biết gì về Excel.
-//
-// Khác ExcelMapper: ExcelMapper cần @ExcelColumn để biết cột nào, tên gì, thứ tự ra sao — phù hợp
-// khi mình làm chủ lớp đó và muốn kiểm soát chính xác. ModelExporter thì suy ra hết bằng
-// Reflection, dùng được cho lớp không sửa được (thư viện ngoài, lớp sinh từ XSD) và cho các
-// màn hình kiểu "xuất bảng này ra Excel" mà không phải tạo thêm DTO.
-//
-// Có @ExcelColumn thì vẫn ưu tiên ExcelMapper — khai báo tường minh luôn thắng suy đoán.
 @Component
 public class ModelExporter {
 
@@ -98,8 +91,7 @@ public class ModelExporter {
         }
     }
 
-    // Kiểu nào không biết cách hiển thị thì đổ về String.valueOf: thà có một cột đọc tạm được
-    // còn hơn cả file xuất hỏng vì một thuộc tính lạ.
+    // Kiểu nào không biết cách hiển thị thì đổ về String.valueOf: thà có một cột đọc tạm được còn
     private void fill(Cell cell, Object value, CellStyle dateTimeStyle, CellStyle dateOnlyStyle) {
         switch (value) {
             case null -> cell.setBlank();

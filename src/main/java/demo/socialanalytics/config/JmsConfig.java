@@ -26,9 +26,6 @@ public class JmsConfig {
     }
 
     // Gửi và nhận đều dùng JSON (TextMessage) thay vì Java serialization.
-    //
-    // Serialize kiểu Java trói message vào đúng class của ứng dụng: đổi tên gói là message cũ
-    // trong hàng đợi thành rác, và service viết bằng ngôn ngữ khác thì không đọc nổi.
     @Bean
     public MessageConverter jmsMessageConverter() {
         JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter();
@@ -39,9 +36,6 @@ public class JmsConfig {
     }
 
     // Thử lại rồi mới bỏ vào DLQ.
-    //
-    // Giãn cách tăng dần (0,5s → 1s → 2s): lỗi tạm thời như DB bận hay mạng chập chờn thường
-    // tự hết sau một lúc, thử lại dồn dập chỉ làm tình hình tệ thêm.
     @Bean
     public ActiveMQConnectionFactoryCustomizer redeliveryPolicyCustomizer() {
         return factory -> {
@@ -63,8 +57,6 @@ public class JmsConfig {
         factory.setMessageConverter(jmsMessageConverter);
 
         // BẮT BUỘC cho cơ chế thử lại: phiên có transaction thì listener ném lỗi sẽ rollback và
-        // message quay lại hàng đợi. Để mặc định (AUTO_ACKNOWLEDGE) thì message coi như đã xử lý
-        // xong ngay khi giao tới — lỗi là mất luôn, không thử lại và cũng không vào DLQ.
         factory.setSessionTransacted(true);
 
         // Nhiều listener chạy song song; hàng đợi dồn thì tự nâng lên tới 5.

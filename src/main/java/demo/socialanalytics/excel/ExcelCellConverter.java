@@ -12,11 +12,9 @@ import java.util.List;
 import java.util.Locale;
 
 // Đổi giá trị một ô Excel sang kiểu Java của field đích.
-// Tách riêng khỏi ExcelMapper để chỗ nào cần thêm kiểu mới chỉ sửa ở một nơi.
 final class ExcelCellConverter {
 
-    // Người dùng thường gõ tay ngày tháng nên chấp nhận vài định dạng quen thuộc,
-    // ngoài kiểu ô ngày chuẩn của Excel.
+    // Người dùng thường gõ tay ngày tháng nên chấp nhận vài định dạng quen thuộc
     private static final List<DateTimeFormatter> DATE_TIME_FORMATS = List.of(
         DateTimeFormatter.ISO_LOCAL_DATE_TIME,
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),

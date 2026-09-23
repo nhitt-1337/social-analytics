@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 // Trả về trang HTML (Thymeleaf), khác với các @RestController trả JSON.
-// @Hidden để mấy trang này không lẫn vào tài liệu OpenAPI của API.
 @Hidden
 @Controller
 public class DashboardController {
@@ -43,7 +42,6 @@ public class DashboardController {
     }
 
     // Trang đăng nhập tự dựng (thay trang mặc định của Spring Security) để đặt đúng hai nút
-    // Facebook / X và hiển thị thông báo lỗi bằng tiếng Việt.
     @GetMapping("/login")
     public String login(Model model) {
         model.addAttribute("providers", availableProviders());
@@ -59,7 +57,6 @@ public class DashboardController {
     }
 
     // Endpoint để thử CSRF: form ở dashboard POST vào đây.
-    // Không kèm token hợp lệ thì CsrfFilter chặn trước khi tới được method này (403).
     @PostMapping("/dashboard/note")
     public String saveNote(
         @RequestParam(defaultValue = "") String note,

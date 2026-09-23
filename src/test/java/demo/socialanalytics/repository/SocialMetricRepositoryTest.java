@@ -116,10 +116,9 @@ class SocialMetricRepositoryTest {
         assertThat(page.getContent()).extracting(SocialMetric::getLikes).containsExactly(10);
     }
 
-    // Truy vấn gộp dùng cho export: một lần gọi lấy chỉ số của nhiều bài, đã sắp sẵn
-    // giảm dần theo thời điểm đo trong từng bài.
+    // Truy vấn gộp dùng cho export: một lần gọi lấy chỉ số của nhiều bài, đã sắp sẵn giảm dần theo
     @Test
-    void layChiSoCuaNhieuBaiTrongMotLanVaSapGiamDan() {
+    void layChiSoCuaNhieuBaiTrongMotLan() {
         persistMetric(firstPost, 100, LocalDateTime.of(2026, 4, 1, 8, 0));
         persistMetric(firstPost, 300, LocalDateTime.of(2026, 4, 3, 8, 0));
         persistMetric(secondPost, 50, LocalDateTime.of(2026, 4, 2, 8, 0));
@@ -142,8 +141,7 @@ class SocialMetricRepositoryTest {
         persistMetric(firstPost, 200, LocalDateTime.of(2026, 4, 2, 8, 0));
         entityManager.flush();
         Long postId = firstPost.getId();
-        // Nạp lại bài viết để collection metrics được Hibernate theo dõi — orphanRemoval
-        // chỉ xoá con thông qua collection của cha.
+        // Nạp lại bài viết để collection metrics được Hibernate theo dõi — orphanRemoval chỉ xoá con
         entityManager.clear();
 
         Post reloaded = entityManager.find(Post.class, postId);

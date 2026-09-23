@@ -7,8 +7,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
-// Body tạo/cập nhật bài viết. userId không nhận từ client ở bước sau (lấy từ phiên đăng nhập),
-// tạm thời cho phép truyền để CRUD dùng được khi chưa có auth.
+// Body tạo/cập nhật bài viết.
 public record PostRequest(
     @NotNull(message = "userId không được để trống")
     Long userId,

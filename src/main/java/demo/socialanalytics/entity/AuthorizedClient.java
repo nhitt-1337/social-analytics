@@ -7,14 +7,6 @@ import lombok.Setter;
 import java.time.Instant;
 
 // Token OAuth2 của một người dùng với một nhà cung cấp.
-//
-// Đây là bản lưu xuống DB của OAuth2AuthorizedClient — thứ Spring Security mặc định chỉ giữ
-// trong bộ nhớ (InMemoryOAuth2AuthorizedClientService), tức là khởi động lại app là mất.
-// Lưu xuống DB vì background job crawl ở bước sau chạy nền, không có phiên đăng nhập,
-// nhưng vẫn cần access token để gọi API Facebook/X.
-//
-// Khoá chính là cặp (registration_id, principal_name) đúng như cách Spring Security định danh
-// một authorized client.
 @Getter
 @Entity
 @Table(

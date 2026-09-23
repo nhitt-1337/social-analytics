@@ -16,16 +16,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 // Lưu token OAuth2 xuống DB thay vì giữ trong bộ nhớ.
-//
-// Spring Security tự gọi saveAuthorizedClient() ngay sau khi đăng nhập thành công, nên chỉ cần
-// khai báo bean này là toàn bộ token được lưu — không phải chen tay vào luồng đăng nhập.
-//
-// Bản mặc định (InMemoryOAuth2AuthorizedClientService) mất sạch token khi restart và không dùng
-// được từ tiến trình nền; job crawl cần đọc token ngoài phiên đăng nhập của người dùng.
-//
-// KHÔNG đánh @Service: lớp này cần ClientRegistrationRepository, mà bean đó chỉ tồn tại khi
-// Social Login đã được cấu hình. Vì vậy nó được khai báo trong SocialLoginClientRegistrations
-// để hai thứ sống cùng vòng đời — chưa cấu hình Social Login thì app vẫn khởi động bình thường.
 public class JpaOAuth2AuthorizedClientService implements OAuth2AuthorizedClientService {
 
     private final AuthorizedClientJpaRepository authorizedClientRepository;
@@ -79,8 +69,7 @@ public class JpaOAuth2AuthorizedClientService implements OAuth2AuthorizedClientS
             accessToken.getScopes() == null ? null : String.join(",", accessToken.getScopes()));
 
         OAuth2RefreshToken refreshToken = authorizedClient.getRefreshToken();
-        // Nhà cung cấp có thể không gửi lại refresh token ở lần đăng nhập sau; giữ bản cũ
-        // thay vì xoá mất, nếu không job nền sẽ hết đường làm mới token.
+        // Nhà cung cấp có thể không gửi lại refresh token ở lần đăng nhập sau
         if (refreshToken != null) {
             stored.setRefreshTokenValue(refreshToken.getTokenValue());
             stored.setRefreshTokenIssuedAt(refreshToken.getIssuedAt());

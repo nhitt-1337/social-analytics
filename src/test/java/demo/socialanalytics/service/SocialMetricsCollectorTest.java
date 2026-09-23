@@ -24,10 +24,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 // Xử lý lỗi trong luồng nền là phần dễ sai nhất: nuốt lỗi thì mất dấu, để lỗi thoát ra thì
-// một bài hỏng kéo sập cả tài khoản. Đây là chỗ kiểm ranh giới đó.
-//
-// Gọi trực tiếp method (không qua proxy Spring) nên @Async không kích hoạt — đúng ý: test này
-// chỉ quan tâm logic, phần chạy song song được kiểm ở SocialMetricsUpdateJobTest.
 @ExtendWith(MockitoExtension.class)
 class SocialMetricsCollectorTest {
 
@@ -85,7 +81,7 @@ class SocialMetricsCollectorTest {
 
     // Bài thứ hai lỗi thì bài thứ ba VẪN phải được crawl.
     @Test
-    void motBaiLoiKhongLamDungCaTaiKhoan() throws Exception {
+    void motBaiLoiKhongDungCaTaiKhoan() throws Exception {
         when(postRepository.findByUserIdOrderByIdAsc(1L))
             .thenReturn(List.of(post(10L, "fb-1"), post(11L, "fb-2"), post(12L, "fb-3")));
         when(socialApiClient.fetchMetrics(any()))
@@ -104,7 +100,7 @@ class SocialMetricsCollectorTest {
 
     // Lỗi khi GHI DB cũng phải được bắt, không chỉ lỗi gọi API.
     @Test
-    void loiGhiDatabaseCungDuocBatVaTinhLaThatBai() throws Exception {
+    void loiGhiDatabaseTinhLaThatBai() throws Exception {
         when(postRepository.findByUserIdOrderByIdAsc(1L))
             .thenReturn(List.of(post(10L, "fb-1"), post(11L, "fb-2")));
         when(socialApiClient.fetchMetrics(any())).thenReturn(snapshot(100));
@@ -120,9 +116,8 @@ class SocialMetricsCollectorTest {
     }
 
     // Future phải hoàn tất BÌNH THƯỜNG kể cả khi mọi bài đều lỗi: job dùng
-    // CompletableFuture.allOf, một future hỏng sẽ kéo theo cả lô.
     @Test
-    void futureVanHoanTatBinhThuongDuMoiBaiDeuLoi() throws Exception {
+    void futureHoanTatDuMoiBaiLoi() throws Exception {
         when(postRepository.findByUserIdOrderByIdAsc(1L)).thenReturn(List.of(post(10L, "fb-1")));
         when(socialApiClient.fetchMetrics(any())).thenThrow(new SocialApiException("hỏng"));
 

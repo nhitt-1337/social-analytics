@@ -18,9 +18,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 // Xuất Excel theo TÊN MODEL, dùng chung một đường đi cho mọi loại dữ liệu.
-//
-// Thêm một model mới = thêm một dòng vào bảng đăng ký dưới đây. Không phải viết thêm endpoint,
-// không phải viết thêm DTO gắn @ExcelColumn — ModelExporter tự suy ra cột bằng Reflection.
 @Service
 @Transactional(readOnly = true)
 public class ModelExportService {

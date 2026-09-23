@@ -8,9 +8,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 // Lịch sử các lần chạy job cập nhật chỉ số.
-//
-// Lưu xuống DB chứ không giữ trong bộ nhớ vì "Last updated time" phải đúng cả sau khi restart —
-// hiện số liệu cũ mà nói là vừa cập nhật thì tệ hơn là nói thẳng "chưa chạy lần nào".
 @Getter
 @Entity
 @Table(

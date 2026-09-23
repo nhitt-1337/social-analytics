@@ -33,13 +33,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-// Test đầu-cuối cho hai API Excel: đi qua HTTP thật, POI thật, DB thật (H2).
-// Đây là chỗ duy nhất chứng minh được cả chuỗi upload -> đọc file -> lưu DB -> xuất file chạy đúng.
+// Test đầu-cuối cho hai API Excel: đi qua HTTP thật, POI thật, DB thật (H2)
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-// Hai endpoint Excel đều yêu cầu đăng nhập; test nhắm vào hành vi nhập/xuất nên giả lập
-// sẵn người dùng thay vì đi qua luồng OAuth2 thật.
+// Hai endpoint Excel đều yêu cầu đăng nhập; test nhắm vào hành vi nhập/xuất nên giả lập sẵn
 @WithMockUser
 class ExcelControllerIntegrationTest {
 

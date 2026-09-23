@@ -21,9 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 
 // Chạy sau khi đổi code lấy token xong: gọi user-info của nhà cung cấp rồi lưu/cập nhật User.
-//
-// Kế thừa DefaultOAuth2UserService để dùng lại phần gọi HTTP, chỉ thay phần diễn giải kết quả —
-// cần thế vì X trả JSON lồng trong "data" nên bản mặc định không đọc được.
 @Service
 public class SocialLoginUserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
@@ -57,8 +54,7 @@ public class SocialLoginUserService implements OAuth2UserService<OAuth2UserReque
 
         User user = upsert(social);
 
-        // Chỉ đưa vào phiên những thuộc tính mình thật sự dùng, không bê nguyên payload của
-        // nhà cung cấp vào session.
+        // Chỉ đưa vào phiên những thuộc tính mình thật sự dùng
         Map<String, Object> attributes = new LinkedHashMap<>();
         attributes.put(PRINCIPAL_ATTRIBUTE, social.principalName());
         attributes.put("userId", user.getId());
@@ -90,11 +86,6 @@ public class SocialLoginUserService implements OAuth2UserService<OAuth2UserReque
     }
 
     // Đã có tài khoản LOCAL trùng email thì gắn danh tính mạng xã hội vào chính tài khoản đó,
-    // thay vì tạo tài khoản thứ hai — nếu không cột email (unique) sẽ chặn việc lưu.
-    //
-    // Lưu ý: chỉ gắn khi tài khoản cũ là LOCAL và chưa liên kết với nhà cung cấp nào. Gắn theo
-    // email chỉ an toàn khi nhà cung cấp có xác minh email (Facebook có); X không trả email nên
-    // không bao giờ đi vào nhánh này.
     private User linkOrCreate(SocialUserAttributes social) {
         Optional<User> byEmail = social.email() == null
             ? Optional.empty()

@@ -15,10 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 // Trực DLQ: message nào thử lại hết số lần vẫn hỏng thì ghi lại xuống DB.
-//
-// Nhận Message thô chứ không phải ImportCompletedMessage: message vào DLQ có thể hỏng ngay ở
-// khâu chuyển đổi (JSON sai định dạng, thiếu property _type). Khai kiểu cụ thể thì chính
-// listener này cũng hỏng theo, và message rơi vào vòng lặp không lối thoát.
 @Component
 public class DeadLetterListener {
 
@@ -50,10 +46,6 @@ public class DeadLetterListener {
     }
 
     // Hàng đợi GỐC của message — thứ cần nhất khi chẩn đoán, vì DLQ dùng chung cho mọi hàng đợi.
-    //
-    // ActiveMQ không đặt nó thành property JMS thường; nó nằm trong trường riêng của
-    // ActiveMQMessage. Vì vậy phải ép kiểu về lớp của ActiveMQ — chỗ duy nhất trong ứng dụng
-    // phụ thuộc vào thư viện broker cụ thể. Đổi sang broker khác thì sửa đúng method này.
     private String originalQueue(Message message) {
         if (message instanceof ActiveMQMessage activeMq && activeMq.getOriginalDestination() != null) {
             return activeMq.getOriginalDestination().getPhysicalName();
@@ -75,14 +67,7 @@ public class DeadLetterListener {
         }
     }
 
-    // Lý do message bị bỏ vào DLQ, do chính broker ghi vào.
-    // Chuỗi này có dạng: "Delivery[4] exceeds redelivery policy limit:RedeliveryPolicy {...}"
-    // — vừa cho biết đã giao mấy lần, vừa cho biết chính sách nào đang áp dụng.
-    //
-    // KHÔNG lưu một con số "số lần giao lại" riêng: cả JMSXDeliveryCount lẫn
-    // ActiveMQMessage.getRedeliveryCounter() đều KHÔNG mang giá trị gốc sang DLQ
-    // (một cái đếm lần giao trong chính DLQ, một cái bị reset về 0) — lưu chúng thì ra
-    // con số trông hợp lý nhưng vô nghĩa.
+    // JMSXDeliveryCount và getRedeliveryCounter() đều không mang giá trị gốc sang DLQ
     private String readFailureCause(Message message) {
         try {
             String cause = message.getStringProperty("dlqDeliveryFailureCause");
@@ -96,7 +81,6 @@ public class DeadLetterListener {
     }
 
     // Mọi lỗi đọc đều nuốt lại: không ghi nổi nội dung thì vẫn phải ghi được rằng CÓ một message
-    // chết. Ném lỗi ở đây là message quay lại DLQ và lặp vô hạn.
     private String readPayload(Message message) {
         try {
             if (message instanceof TextMessage text) {

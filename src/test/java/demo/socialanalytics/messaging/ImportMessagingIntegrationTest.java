@@ -19,8 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static java.time.Duration.ofSeconds;
 
-// Toàn bộ chuỗi: import Excel -> phát message -> listener nhận -> tính lại thống kê.
-// Chạy trên broker ActiveMQ nhúng (vm://) nên không cần Docker.
+// Toàn bộ chuỗi: import Excel -> phát message -> listener nhận -> tính lại thống kê
 @SpringBootTest
 @ActiveProfiles("test")
 class ImportMessagingIntegrationTest {
@@ -78,12 +77,8 @@ class ImportMessagingIntegrationTest {
     }
 
     // Đây là phép kiểm cho @TransactionalEventListener(AFTER_COMMIT).
-    //
-    // Nếu message được gửi TRONG transaction, listener (chạy luồng khác) sẽ đọc DB trước lúc
-    // commit và đếm ra 0 bài. Thống kê đếm đúng số bài nghĩa là message chỉ rời đi sau khi
-    // dữ liệu đã nhìn thấy được.
     @Test
-    void messageChiDuocGuiSauKhiDuLieuDaCommit() {
+    void chiGuiSauKhiCommit() {
         importService.importPosts(upload(List.of(
             List.of("facebook", "fb-1", "Bài 1", "", ""),
             List.of("facebook", "fb-2", "Bài 2", "", ""))), admin.getId());

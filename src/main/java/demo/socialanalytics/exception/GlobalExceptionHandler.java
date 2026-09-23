@@ -25,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 // Điều phối toàn bộ lỗi về một khuôn { "error": { code, message, fields? } }.
-// Service chỉ ném exception có tên, không tự dựng response -> tầng service không phụ thuộc web.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -68,8 +67,6 @@ public class GlobalExceptionHandler {
     }
 
     // Dịch vụ tỷ giá bên ngoài không dùng được -> 503, KHÔNG phải 400 hay 500.
-    // 400 là đổ oan cho người gọi, 500 là nhận lỗi về mình; 503 nói đúng bản chất:
-    // phụ thuộc bên ngoài đang hỏng, thử lại sau.
     @ExceptionHandler(ExchangeRateUnavailableException.class)
     public ResponseEntity<ErrorResponse> handleExchangeRateUnavailable(
         ExchangeRateUnavailableException exception) {

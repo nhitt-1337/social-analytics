@@ -13,10 +13,6 @@ public enum AuthProvider {
     }
 
     // Đổi registrationId trong cấu hình OAuth2 sang enum.
-    //
-    // Twitter đổi tên thành X nên Spring Security đặt hằng provider dựng sẵn là `x`
-    // (https://api.x.com/...). Ở phía mình vẫn giữ tên TWITTER cho khớp đề bài và dữ liệu cũ,
-    // nên chấp nhận cả hai cách gọi.
     public static AuthProvider fromRegistrationId(String registrationId) {
         if (registrationId == null) {
             throw new IllegalArgumentException("registrationId không được null");

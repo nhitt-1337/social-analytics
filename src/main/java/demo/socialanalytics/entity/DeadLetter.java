@@ -7,9 +7,6 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 // Message đã thử lại hết số lần cho phép mà vẫn hỏng, bị broker đẩy sang DLQ.
-//
-// Lưu xuống DB vì DLQ trên broker là thứ không ai nhìn tới: message nằm đó im lặng cho tới khi
-// hàng đợi đầy. Có bảng này thì dashboard hiện được, và còn nội dung gốc để xử lý lại sau.
 @Getter
 @Entity
 @Table(
@@ -36,7 +33,6 @@ public class DeadLetter {
     private String payload;
 
     // Lý do broker bỏ cuộc, do chính broker ghi vào message.
-    // Dạng: "Delivery[4] exceeds redelivery policy limit:RedeliveryPolicy {...}"
     @Column(name = "failure_cause", length = 2100)
     @Setter
     private String failureCause;

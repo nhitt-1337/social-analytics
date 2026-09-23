@@ -11,10 +11,6 @@ import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.soap.client.SoapFaultClientException;
 
 // Phía TIÊU THỤ SOAP: gọi ra một dịch vụ tỷ giá bên ngoài.
-//
-// Mặc định trỏ vào chính endpoint SOAP của ứng dụng này (xem ExchangeRateProperties), để bản
-// demo end-to-end chạy được khi không có mạng. Đổi `social.exchange-rate.endpoint` là trỏ sang
-// nhà cung cấp thật, không phải sửa code.
 @Component
 public class ExchangeRateClient {
 
@@ -42,8 +38,7 @@ public class ExchangeRateClient {
             log.debug("Tỷ giá {} -> {} = {}", from, to, response.getRate());
             return response;
         } catch (SoapFaultClientException exception) {
-            // SOAP Fault là LỖI NGHIỆP VỤ do nhà cung cấp trả về (tiền tệ không hỗ trợ...),
-            // khác hẳn với lỗi mạng. Giữ nguyên thông điệp để phía trên hiểu chuyện gì xảy ra.
+            // SOAP Fault là LỖI NGHIỆP VỤ do nhà cung cấp trả về (tiền tệ không hỗ trợ...)
             throw new ExchangeRateUnavailableException(
                 "Dịch vụ tỷ giá từ chối yêu cầu: " + exception.getFaultStringOrReason(), exception);
         } catch (WebServiceIOException exception) {

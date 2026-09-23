@@ -23,9 +23,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Token OAuth2 phải sống sót qua lần khởi động lại: bản mặc định của Spring Security chỉ giữ
-// trong bộ nhớ. @DataJpaTest để chạy thật trên DB thay vì mock repository — cái cần kiểm ở đây
-// chính là việc ghi/đọc có đúng không.
+// Chạy trên cổng thật để đi qua chuỗi filter của Spring Security
 @DataJpaTest
 @ActiveProfiles("test")
 class JpaOAuth2AuthorizedClientServiceTest {
@@ -95,8 +93,7 @@ class JpaOAuth2AuthorizedClientServiceTest {
         assertThat(loaded.getAccessToken().getTokenValue()).isEqualTo("token-moi");
     }
 
-    // Nhà cung cấp thường chỉ gửi refresh token ở lần cấp quyền đầu tiên. Lần sau không có
-    // thì phải giữ bản cũ, xoá đi là job nền hết đường làm mới token.
+    // Nhà cung cấp thường chỉ gửi refresh token ở lần cấp quyền đầu tiên
     @Test
     void khongNhanDuocRefreshTokenMoiThiGiuBanCu() {
         service.saveAuthorizedClient(authorizedClient("token-cu", "refresh-cu"), principal);

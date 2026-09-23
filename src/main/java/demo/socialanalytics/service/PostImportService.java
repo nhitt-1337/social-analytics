@@ -30,10 +30,6 @@ import java.util.Locale;
 import java.util.Set;
 
 // Nhập danh sách bài viết từ file Excel.
-//
-// Chính sách: import "chịu lỗi" — dòng sai định dạng hoặc trùng bài đã có thì bỏ qua và
-// báo lại cho người dùng, các dòng hợp lệ vẫn được lưu. Làm vậy vì file do người dùng gõ tay,
-// bắt cả file phải đúng tuyệt đối mới cho nhập là quá khắt khe.
 @Service
 public class PostImportService {
 
@@ -60,8 +56,7 @@ public class PostImportService {
     public ImportResultResponse importPosts(MultipartFile file, Long userId) {
         requireExcelFile(file);
 
-        // Chủ sở hữu của toàn bộ bài trong file. Khi có Social Login sẽ lấy từ phiên đăng nhập
-        // thay vì nhận từ tham số.
+        // Chủ sở hữu của toàn bộ bài trong file.
         User owner = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("người dùng"));
 
@@ -78,13 +73,11 @@ public class PostImportService {
 
         for (ExcelRow<PostImportRow> entry : rows) {
             PostImportRow row = entry.value();
-            // Lấy số dòng do ExcelMapper ghi lại, KHÔNG suy từ vị trí trong danh sách:
-            // các dòng lỗi đã bị loại nên vị trí không còn khớp với file.
+            // Lấy số dòng do ExcelMapper ghi lại
             int rowNumber = entry.rowNumber();
             String key = key(row);
 
-            // existing chứa cả bài đã có trong DB lẫn bài vừa gặp ở dòng trên trong cùng file,
-            // nên file tự trùng với chính nó cũng bị chặn.
+            // existing chứa cả bài đã có trong DB lẫn bài vừa gặp ở dòng trên trong cùng file
             if (!existing.add(key)) {
                 errors.add(new ImportResultResponse.RowErrorResponse(rowNumber,
                     "bài viết " + row.getExternalId() + " trên " + row.getPlatform().getSlug()
@@ -103,8 +96,6 @@ public class PostImportService {
             List.copyOf(errors));
 
         // Phát sự kiện nội bộ; ImportCompletedProducer mới là nơi đẩy lên hàng đợi, và chỉ đẩy
-        // SAU KHI transaction này commit. Gửi JMS thẳng từ đây thì listener có thể đọc DB trước
-        // lúc commit và tính thống kê thiếu đúng những bài vừa lưu.
         eventPublisher.publishEvent(new ImportCompletedEvent(new ImportCompletedMessage(
             userId, response.totalRows(), response.imported(), response.skipped(),
             LocalDateTime.now())));
@@ -120,8 +111,7 @@ public class PostImportService {
         }
     }
 
-    // Một truy vấn duy nhất cho cả file. Lọc theo externalId trước (cột có index),
-    // rồi ghép với platform ở bộ nhớ.
+    // Một truy vấn duy nhất cho cả file.
     private Set<String> loadExistingKeys(List<PostImportRow> rows) {
         if (rows.isEmpty()) {
             return new HashSet<>();

@@ -17,11 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.ws.test.client.RequestMatchers.*;
 import static org.springframework.ws.test.client.ResponseCreators.*;
 
-// Phía TIÊU THỤ SOAP.
-//
-// MockWebServiceServer chặn ngay ở tầng WebServiceTemplate: kiểm tra được XML gửi đi và giả lập
-// XML trả về mà không cần mở cổng mạng nào — quan trọng vì cái đáng kiểm ở đây là phần dịch
-// đối tượng Java sang XML và ngược lại, không phải HTTP.
+// MockWebServiceServer chặn dưới tầng HTTP: kiểm được XML mà không cần mở cổng
 @SpringBootTest
 @ActiveProfiles("test")
 class ExchangeRateClientTest {
@@ -66,10 +62,9 @@ class ExchangeRateClientTest {
         server.verify();
     }
 
-    // Nhà cung cấp trả SOAP Fault = lỗi NGHIỆP VỤ. Phải giữ lại thông điệp để bên trên hiểu
-    // chuyện gì xảy ra, chứ không nuốt thành một lỗi chung chung.
+    // Nhà cung cấp trả SOAP Fault = lỗi NGHIỆP VỤ
     @Test
-    void soapFaultDuocDoiThanhNgoaiLeCoThongDiepRoRang() throws Exception {
+    void soapFaultGiuNguyenThongDiep() throws Exception {
         server.expect(anything())
             .andRespond(withClientOrSenderFault("Tiền tệ XXX không được hỗ trợ", java.util.Locale.ENGLISH));
 
@@ -79,7 +74,7 @@ class ExchangeRateClientTest {
     }
 
     @Test
-    void khongGoiToiNoiThiBaoLoiKhongKetNoiDuoc() throws Exception {
+    void khongKetNoiDuocThiBaoLoi() throws Exception {
         server.expect(anything()).andRespond(withException(new java.io.IOException("connection refused")));
 
         assertThatThrownBy(() -> client.fetchRate("USD", "VND"))

@@ -31,11 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.ws.test.client.RequestMatchers.anything;
 import static org.springframework.ws.test.client.ResponseCreators.withPayload;
 
-// Integration test cuối: chạy nguyên một vòng đời dữ liệu qua TẤT CẢ các tầng đã dựng.
-//
-// Mỗi tầng đều đã có test riêng; test này kiểm thứ mà test riêng không kiểm được — các tầng
-// ghép lại có chạy thông không. Chạy tuần tự theo @Order vì mỗi bước dùng kết quả của bước trước,
-// đúng như một phiên làm việc thật.
+// Chạy tuần tự thì test treo ở đây, không phải 'may thì xanh'
 @SpringBootTest(properties = {
     "social.crawl.enabled=true",
     "social.crawl.initial-delay=PT24H",

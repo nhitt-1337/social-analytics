@@ -21,12 +21,7 @@ import java.net.http.HttpResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// SOAP qua HTTP THẬT, đi xuyên qua cả chuỗi filter của Spring Security.
-//
-// Đây là phép kiểm cho một lỗi mà cả ExchangeRateClientTest lẫn EndToEndIntegrationTest đều
-// KHÔNG bắt được: cả hai dùng MockWebServiceServer, chặn ngay dưới tầng HTTP nên không đi qua
-// Spring Security. Khi /soap còn nằm sau lớp đăng nhập, mọi client SOAP (kể cả
-// ExchangeRateClient của chính ứng dụng này) chỉ nhận về trang đăng nhập — mà test vẫn xanh.
+// MockWebServiceServer chặn dưới tầng HTTP: kiểm được XML mà không cần mở cổng
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class SoapOverHttpTest {
@@ -49,7 +44,7 @@ class SoapOverHttpTest {
 
     // Client SOAP là máy gọi máy, không có phiên đăng nhập trình duyệt.
     @Test
-    void goiDuocSoapMaKhongCanPhienDangNhap() {
+    void goiDuocSoapKhongCanDangNhap() {
         GetExchangeRateRequest request = new GetExchangeRateRequest();
         request.setFromCurrency("USD");
         request.setToCurrency("VND");
@@ -93,7 +88,7 @@ class SoapOverHttpTest {
 
     // Các endpoint khác VẪN phải yêu cầu đăng nhập — mở /soap không được kéo theo mở cả app.
     @Test
-    void mienTruChiApDungChoSoapChuKhongPhaiCaUngDung() throws Exception {
+    void mienTruChiApDungChoSoap() throws Exception {
         assertThat(httpGet("/api/v1/posts").statusCode()).isEqualTo(401);
         assertThat(httpGet("/api/v1/chart-data").statusCode()).isEqualTo(401);
         assertThat(httpGet("/api/v1/statistics").statusCode()).isEqualTo(401);

@@ -26,8 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-// Unit test cho luồng export. ExcelMapper dùng bản thật rồi đọc ngược file xuất ra để
-// kiểm tra nội dung — chỉ verify "đã gọi write()" thì không chứng minh được file đúng.
+// Unit test cho luồng export
 @ExtendWith(MockitoExtension.class)
 class ReportExportServiceTest {
 
@@ -144,7 +143,7 @@ class ReportExportServiceTest {
 
     // Chỉ MỘT truy vấn metrics cho toàn bộ báo cáo, không phải mỗi bài một truy vấn.
     @Test
-    void layChiSoCuaMoiBaiTrongMotTruyVanDuyNhat() {
+    void layChiSoCuaMoiBai() {
         List<Post> posts = List.of(
             TestEntities.post(10L, owner, Platform.FACEBOOK, "fb-001"),
             TestEntities.post(11L, owner, Platform.TWITTER, "tw-001"),
@@ -159,7 +158,7 @@ class ReportExportServiceTest {
     }
 
     @Test
-    void nenTangKhongHopLeThiBaoLoi() {
+    void nenTangKhongHopLe() {
         assertThatThrownBy(() -> exportService.exportReport("instagram", null, null))
             .isInstanceOf(InvalidRequestParameterException.class)
             .hasMessageContaining("instagram");

@@ -10,8 +10,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Mỗi nhà cung cấp trả một kiểu JSON khác nhau; đây là chỗ kiểm phần đọc hiểu đó.
-// Không cần Spring, không gọi mạng — chỉ là ánh xạ Map -> record.
+// Mỗi nhà cung cấp trả một kiểu JSON khác nhau; đây là chỗ kiểm phần đọc hiểu đó
 class SocialUserAttributesTest {
 
     @Nested
@@ -37,8 +36,7 @@ class SocialUserAttributesTest {
             assertThat(social.avatarUrl()).isEqualTo("https://scontent.fbcdn.net/anh.jpg");
         }
 
-        // is_silhouette = true nghĩa là tài khoản CHƯA đặt ảnh; Facebook vẫn trả về một URL
-        // hình xám. Nhận về null để giao diện hiện phần dự phòng thay vì hình xám vô nghĩa.
+        // is_silhouette = true nghĩa là tài khoản CHƯA đặt ảnh; Facebook vẫn trả về một URL hình xám
         @Test
         void anhMacDinhCuaFacebookThiCoiNhuKhongCoAnh() {
             var social = SocialUserAttributes.of("facebook", Map.of(
@@ -73,8 +71,7 @@ class SocialUserAttributesTest {
     @Nested
     class X {
 
-        // /2/users/me trả LỒNG trong "data" — lý do không dùng được DefaultOAuth2UserService
-        // nguyên bản cho X.
+        // /2/users/me trả LỒNG trong "data" — lý do không dùng được DefaultOAuth2UserService nguyên
         @Test
         void docDuocJsonLongTrongDataCuaX() {
             Map<String, Object> attributes = Map.of("data", Map.of(
@@ -127,8 +124,7 @@ class SocialUserAttributesTest {
         }
     }
 
-    // Ghép cả nhà cung cấp vào tên định danh: id trùng nhau giữa hai nền tảng không được
-    // coi là cùng một người.
+    // Ghép cả nhà cung cấp vào tên định danh: id trùng nhau giữa hai nền tảng không được coi là
     @Test
     void principalNameGomCaNhaCungCapVaId() {
         var facebook = SocialUserAttributes.of("facebook", Map.of("id", "100", "name", "A"));

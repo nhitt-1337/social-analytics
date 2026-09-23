@@ -44,7 +44,6 @@ public class MetricService {
     }
 
     // Chuỗi thời gian cho biểu đồ: không phân trang, sắp tăng dần theo thời điểm đo.
-    // Bỏ trống from/to thì lấy 30 ngày gần nhất.
     public ListResponse<MetricResponse> timeSeries(Long postId, LocalDateTime from, LocalDateTime to) {
         requirePost(postId);
         LocalDateTime end = to != null ? to : LocalDateTime.now();

@@ -18,8 +18,7 @@ public class CrawlStatusService {
         this.crawlRunRepository = crawlRunRepository;
     }
 
-    // Rỗng khi job chưa chạy lần nào. Dashboard hiển thị "chưa cập nhật lần nào" thay vì
-    // bịa ra một mốc thời gian.
+    // Rỗng khi job chưa chạy lần nào.
     public Optional<CrawlRunResponse> lastRun() {
         return crawlRunRepository.findFirstByOrderByStartedAtDescIdDesc().map(CrawlRunResponse::of);
     }

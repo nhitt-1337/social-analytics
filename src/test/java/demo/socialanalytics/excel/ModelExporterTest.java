@@ -190,7 +190,7 @@ class ModelExporterTest {
 
         // Getter hỏng thì báo rõ THUỘC TÍNH NÀO, không để lọt một ngoại lệ trống trơn.
         @Test
-        void getterNemLoiThiNoiRoThuocTinhNao() {
+        void getterNemLoiThiNoiRoThuocTinh() {
             assertThatThrownBy(() ->
                 exporter.export(List.of(new Exploding()), Exploding.class, "Test"))
                 .isInstanceOf(IllegalStateException.class)
@@ -203,7 +203,7 @@ class ModelExporterTest {
     }
 
     @Test
-    void kieuLaVanXuatDuocChuKhongLamHongCaFile() {
+    void kieuLaVanXuatDuoc() {
         var rows = List.of(new WithOddTypes(
             "x", LocalDate.of(2026, 9, 23), List.of("a", "b"), new java.math.BigDecimal("25400.5")));
 

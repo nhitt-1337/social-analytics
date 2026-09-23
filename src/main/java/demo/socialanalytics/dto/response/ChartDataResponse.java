@@ -4,9 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 // Dữ liệu cho Chart.js, đã sắp sẵn thành labels + các series để phía trình duyệt khỏi phải
-// biến đổi gì thêm.
-//
-// labels và mỗi series có cùng số phần tử, cùng thứ tự — đúng dạng Chart.js cần.
 public record ChartDataResponse(
     List<LocalDate> labels,
     List<Long> likes,

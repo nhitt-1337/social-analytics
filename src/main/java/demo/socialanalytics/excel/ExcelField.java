@@ -3,7 +3,6 @@ package demo.socialanalytics.excel;
 import java.lang.reflect.Field;
 
 // Một cột đã được "giải mã" từ annotation: giữ sẵn Field để đọc/ghi bằng Reflection.
-// ExcelMapper cache danh sách này theo từng class nên chỉ quét annotation một lần.
 public record ExcelField(Field field, String header, int order, boolean required) {
 
     public Object read(Object target) {

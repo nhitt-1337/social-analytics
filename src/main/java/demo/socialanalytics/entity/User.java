@@ -6,8 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Người dùng dashboard. providerId là id do Facebook/Twitter cấp, cần cho Social Login
-// ở bước sau; cặp (provider, providerId) phải duy nhất để không tạo trùng tài khoản.
+// Người dùng dashboard.
 @Getter
 @Entity
 @Table(
@@ -22,8 +21,6 @@ public class User {
     private Long id;
 
     // Cho phép null: đăng nhập bằng X/Twitter không trả về email (cần quyền riêng mới có),
-    // nên ép NOT NULL sẽ chặn luôn nhóm người dùng đó. Unique vẫn giữ — MySQL cho phép
-    // nhiều dòng cùng NULL nên không vướng.
     @Column(unique = true, length = 255)
     @Setter
     private String email;

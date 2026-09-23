@@ -7,17 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-// Đẩy message IMPORT_COMPLETED lên hàng đợi.
-//
-// Điểm mấu chốt: @TransactionalEventListener(AFTER_COMMIT) — chỉ gửi SAU KHI transaction import
-// đã commit.
-//
-// Gửi thẳng JMS từ trong PostImportService.importPosts() (đang mở transaction) sẽ hỏng theo hai
-// kiểu, cả hai đều khó lần ra vì chỉ thỉnh thoảng mới xảy ra:
-//   1. Listener chạy trên luồng khác, nhận message trước khi dữ liệu được commit -> tính thống kê
-//      thiếu đúng những bài vừa import.
-//   2. Transaction rollback sau khi đã gửi -> message báo "import xong" cho một lần import
-//      không hề tồn tại.
+// Chỉ gửi sau khi transaction commit, tránh listener đọc dữ liệu chưa thấy
 @Component
 public class ImportCompletedProducer {
 

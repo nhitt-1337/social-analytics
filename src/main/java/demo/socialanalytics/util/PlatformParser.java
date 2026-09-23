@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Locale;
 
 // Chuyển chuỗi client gửi ("facebook") thành enum Platform, không phân biệt hoa thường.
-// Gom vào util vì cả PostService lẫn phần import Excel ở bước sau đều cần.
 public final class PlatformParser {
 
     private PlatformParser() {

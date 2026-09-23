@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Map;
 
 // Khuôn lỗi thống nhất cho toàn API: { "error": { "code", "message", "fields"? } }.
-// fields chỉ có ở lỗi validate nên đánh dấu NON_NULL để không trả "fields": null.
 public record ErrorResponse(ErrorBody error) {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

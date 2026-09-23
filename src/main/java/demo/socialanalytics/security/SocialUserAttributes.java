@@ -5,9 +5,6 @@ import demo.socialanalytics.entity.AuthProvider;
 import java.util.Map;
 
 // Thông tin người dùng đã được chuẩn hoá về một khuôn chung cho mọi nhà cung cấp.
-//
-// Mỗi nơi trả một kiểu JSON khác nhau nên phần "đọc hiểu" gom hết vào đây; tầng trên chỉ làm
-// việc với record này, không phải if/else theo từng nhà cung cấp.
 public record SocialUserAttributes(
     AuthProvider provider,
     String providerId,
@@ -16,8 +13,7 @@ public record SocialUserAttributes(
     String avatarUrl
 ) {
 
-    // Facebook: /me?fields=id,name,email,picture.type(large) trả về
-    // { "id", "name", "email", "picture": { "data": { "url", "is_silhouette", ... } } }
+    // Facebook: /me?fields=id,name,email,picture.type(large) trả về { "id"
     static SocialUserAttributes fromFacebook(Map<String, Object> attributes) {
         return new SocialUserAttributes(
             AuthProvider.FACEBOOK,
@@ -27,11 +23,7 @@ public record SocialUserAttributes(
             facebookPicture(attributes));
     }
 
-    // Ảnh đại diện phải lấy từ payload chứ KHÔNG tự ghép URL graph.facebook.com/{id}/picture:
-    // URL đó gọi mà không kèm access token thì Facebook trả về ảnh silhouette xám cho mọi người.
-    //
-    // is_silhouette = true nghĩa là tài khoản chưa đặt ảnh -> để null cho giao diện hiện phần
-    // dự phòng, thay vì hiện một hình xám vô nghĩa.
+    // Phải xin picture trong user-info; tự ghép URL sẽ ra ảnh mặc định xám
     @SuppressWarnings("unchecked")
     private static String facebookPicture(Map<String, Object> attributes) {
         if (!(attributes.get("picture") instanceof Map<?, ?> picture)) {
@@ -48,10 +40,6 @@ public record SocialUserAttributes(
     }
 
     // X (Twitter): /2/users/me trả LỒNG một lớp { "data": { "id", "name", "username" } }.
-    // Đây là lý do không dùng thẳng DefaultOAuth2UserService cho X — nó tìm thuộc tính ở
-    // tầng ngoài cùng nên không thấy "username" và ném lỗi.
-    //
-    // X cũng KHÔNG trả email (phải xin quyền riêng), nên email để null.
     @SuppressWarnings("unchecked")
     static SocialUserAttributes fromX(Map<String, Object> attributes) {
         Map<String, Object> data = attributes.get("data") instanceof Map<?, ?> nested
@@ -78,7 +66,6 @@ public record SocialUserAttributes(
     }
 
     // Tên định danh duy nhất của phiên đăng nhập, vd "facebook:123456".
-    // Ghép cả nhà cung cấp vào để id trùng nhau giữa hai nền tảng không lẫn thành một người.
     public String principalName() {
         return provider.getSlug() + ":" + providerId;
     }

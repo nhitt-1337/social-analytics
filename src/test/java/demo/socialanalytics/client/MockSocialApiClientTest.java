@@ -44,8 +44,7 @@ class MockSocialApiClientTest {
         assertThat(snapshot.followers()).isNotNegative();
     }
 
-    // Số liệu bám theo id bài viết nên gọi lại vẫn ra kết quả tương đương — có vậy biểu đồ
-    // tăng trưởng mới có hình dạng hợp lý, thay vì nhảy loạn mỗi lần crawl.
+    // Số liệu bám theo id bài viết nên gọi lại vẫn ra kết quả tương đương — có vậy biểu đồ tăng
     @Test
     void cungMotBaiThiKetQuaOnDinhQuaCacLanGoi() {
         MockSocialApiClient client = client(0, 0);

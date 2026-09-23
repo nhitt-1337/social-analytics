@@ -17,12 +17,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 // Đọc/ghi Excel cho BẤT KỲ class nào có field gắn @ExcelColumn.
-//
-// Toàn bộ phần "class này có những cột nào, kiểu gì" được suy ra lúc chạy bằng Reflection,
-// nên thêm một loại báo cáo mới chỉ cần tạo thêm một class DTO gắn annotation — không sửa file này.
-//
-// Đọc (read) cần ghi giá trị vào field nên class đích phải có constructor rỗng và field không final.
-// Ghi (write) chỉ đọc field nên dùng được cả record.
 @Component
 public class ExcelMapper {
 
@@ -107,7 +101,6 @@ public class ExcelMapper {
             throw new ExcelParseException("File Excel đang được đặt mật khẩu", exception);
         } catch (UnsupportedFileFormatException | IOException exception) {
             // Nội dung không phải workbook (vd đổi đuôi .txt thành .xlsx) hoặc file bị hỏng.
-            // Không chuyển tiếp message gốc của POI vì nó là tiếng Anh và nói về nội bộ thư viện.
             throw new ExcelParseException("File tải lên không phải file Excel hợp lệ hoặc đã bị hỏng", exception);
         }
     }
@@ -117,16 +110,14 @@ public class ExcelMapper {
         for (Cell cell : headerRow) {
             String text = cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : null;
             if (text != null && !text.isBlank()) {
-                // So khớp không phân biệt hoa thường và khoảng trắng thừa -> người dùng
-                // gõ lại tiêu đề hơi khác vẫn nhận.
+                // So khớp không phân biệt hoa thường và khoảng trắng thừa -> người dùng gõ lại tiêu đề hơi
                 indexes.putIfAbsent(normalize(text), cell.getColumnIndex());
             }
         }
         return indexes;
     }
 
-    // Ghép mỗi field với chỉ số cột trong file. Cột không có trong file thì bỏ qua,
-    // trừ khi nó là cột bắt buộc.
+    // Ghép mỗi field với chỉ số cột trong file.
     private Map<ExcelField, Integer> matchColumns(List<ExcelField> fields, Map<String, Integer> columnIndexes) {
         Map<ExcelField, Integer> layout = new LinkedHashMap<>();
         List<String> missingRequired = new ArrayList<>();

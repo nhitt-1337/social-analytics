@@ -22,8 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // @DataJpaTest chỉ dựng tầng JPA (không nạp controller/service) và chạy trong transaction
-// tự rollback sau mỗi test. Mục đích: kiểm tra các câu JPQL viết tay thật sự chạy được và
-// unique constraint có hiệu lực — những thứ mock repository không bao giờ phát hiện được.
 @DataJpaTest
 @ActiveProfiles("test")
 class PostRepositoryTest {

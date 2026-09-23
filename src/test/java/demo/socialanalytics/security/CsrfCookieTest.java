@@ -13,12 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-// Tách riêng khỏi SecurityRulesTest vì phép kiểm này cần CsrfFilter còn NGUYÊN BẢN.
-//
-// SecurityMockMvcRequestPostProcessors.csrf() thay CsrfTokenRepository ngay trên instance
-// CsrfFilter dùng chung của context; sau khi một test nào đó gọi .with(csrf()) thì các request
-// tiếp theo không còn ghi cookie thật nữa. @DirtiesContext yêu cầu một context sạch cho class
-// này nên kết quả không phụ thuộc thứ tự chạy.
+// csrf() thay CsrfTokenRepository trên CsrfFilter dùng chung -> phải tách context riêng
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -28,11 +23,9 @@ class CsrfCookieTest {
 
     @Autowired MockMvc mvc;
 
-    // Cookie XSRF-TOKEN phải có mặt ngay từ lần tải trang đầu tiên, nếu không JavaScript
-    // không có gì để gắn vào header X-XSRF-TOKEN. Đây là việc của CsrfCookieFilter —
-    // từ Spring Security 6, token nạp lười nên không chạm vào thì cookie không được gửi.
+    // Chạy trên cổng thật để đi qua chuỗi filter của Spring Security
     @Test
-    void traVeCookieXsrfTokenChoJavaScriptDoc() throws Exception {
+    void traVeCookieXsrfToken() throws Exception {
         var result = mvc.perform(get("/api/v1/dashboard")
                 .contextPath("/api/v1").servletPath("/dashboard")
                 .accept(MediaType.TEXT_HTML))

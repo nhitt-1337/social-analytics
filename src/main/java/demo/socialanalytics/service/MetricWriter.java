@@ -10,14 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-// Ghi một lần đo xuống DB.
-//
-// Tách thành bean riêng vì @Transactional chỉ có tác dụng khi được gọi TỪ BÊN NGOÀI qua proxy;
-// gọi thẳng một method @Transactional trong cùng class thì Spring không chen vào được và
-// transaction không hề mở.
-//
-// Mỗi bài là một transaction riêng (REQUIRES_NEW): bài thứ 5 lỗi thì 4 bài trước vẫn giữ nguyên
-// kết quả, thay vì cuốn cả lượt crawl của tài khoản đó vào một lần rollback.
+// @Transactional chỉ có tác dụng khi gọi từ bên ngoài qua proxy
 @Service
 public class MetricWriter {
 

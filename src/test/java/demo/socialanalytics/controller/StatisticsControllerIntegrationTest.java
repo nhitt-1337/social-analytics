@@ -63,12 +63,12 @@ class StatisticsControllerIntegrationTest {
     }
 
     @Test
-    void chuaDangNhapThiKhongXemDuocThongKe() throws Exception {
+    void chuaDangNhapKhongXemDuocThongKe() throws Exception {
         mvc.perform(api("/statistics")).andExpect(status().isUnauthorized());
     }
 
     @Test
-    void chuaDangNhapThiKhongXemDuocDeadLetter() throws Exception {
+    void chuaDangNhapKhongXemDuocDlq() throws Exception {
         mvc.perform(api("/statistics/dead-letters")).andExpect(status().isUnauthorized());
     }
 

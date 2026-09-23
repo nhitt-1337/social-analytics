@@ -8,8 +8,6 @@ import java.util.Optional;
 
 @Repository
 // Tên có hậu tố Jpa để không trùng tên bean với `authorizedClientRepository` mà Spring Boot
-// tự tạo cho OAuth2 (kiểu OAuth2AuthorizedClientRepository) — trùng tên là context không khởi
-// động được.
 public interface AuthorizedClientJpaRepository extends JpaRepository<AuthorizedClient, Long> {
 
     Optional<AuthorizedClient> findByRegistrationIdAndPrincipalName(
