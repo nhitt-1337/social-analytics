@@ -1,6 +1,7 @@
 package demo.socialanalytics.controller;
 
 import demo.socialanalytics.dto.response.ImportResultResponse;
+import demo.socialanalytics.exception.InvalidRequestParameterException;
 import demo.socialanalytics.service.PostImportService;
 import demo.socialanalytics.service.ReportExportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,8 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,14 +40,29 @@ public class ExcelController {
     @Operation(
         summary = "Nhập bài viết từ file Excel",
         description = "File .xlsx với các cột: platform, externalId, content, url, postedAt. "
+            + "Bỏ trống userId thì lấy người đang đăng nhập. "
             + "Dòng sai định dạng hoặc trùng bài đã có sẽ bị bỏ qua và liệt kê trong errors, "
             + "các dòng còn lại vẫn được lưu.")
     @PostMapping(value = "/import-posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImportResultResponse> importPosts(
         @RequestPart("file") MultipartFile file,
-        @RequestParam Long userId
+        @RequestParam(required = false) Long userId,
+        @AuthenticationPrincipal OAuth2User principal
     ) {
-        return ResponseEntity.ok(postImportService.importPosts(file, userId));
+        return ResponseEntity.ok(postImportService.importPosts(file, resolveOwner(userId, principal)));
+    }
+
+    // Bỏ trống userId thì lấy người đang đăng nhập, để form trên dashboard không phải hỏi id.
+    private Long resolveOwner(Long userId, OAuth2User principal) {
+        if (userId != null) {
+            return userId;
+        }
+        Object fromSession = principal == null ? null : principal.getAttribute("userId");
+        if (fromSession instanceof Number number) {
+            return number.longValue();
+        }
+        throw new InvalidRequestParameterException(
+            "Thiếu userId và không xác định được người dùng từ phiên đăng nhập");
     }
 
     @Operation(

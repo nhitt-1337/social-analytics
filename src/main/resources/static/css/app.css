@@ -71,3 +71,8 @@ body.centered {
 }
 .chart-box--small { height: 220px; max-width: 340px; }
 h2 .badge { font-weight: 500; }
+
+input[type=file] {
+    flex: 1; min-width: 220px; padding: 8px;
+    border: 1px solid #ccd0d5; border-radius: 8px; background: #fff; font: inherit;
+}

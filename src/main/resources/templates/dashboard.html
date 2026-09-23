@@ -27,6 +27,22 @@
 
     <hr>
 
+    <h2>Nhập bài viết từ Excel</h2>
+    <p class="muted">
+        File <code>.xlsx</code> cần hai cột bắt buộc <code>platform</code> và
+        <code>externalId</code>; thêm được <code>content</code>, <code>url</code>,
+        <code>postedAt</code>. Cột tìm theo tên nên thứ tự tuỳ ý.
+        Bài viết sẽ thuộc về tài khoản đang đăng nhập.
+    </p>
+
+    <div class="row">
+        <input type="file" id="importFile" accept=".xlsx,.xls">
+        <button class="btn" type="button" onclick="importExcel()">Nhập</button>
+    </div>
+    <pre id="importResult" class="result"></pre>
+
+    <hr>
+
     <h2>
         Tương tác theo ngày
         <span id="liveBadge" class="badge warn">đang kết nối…</span>

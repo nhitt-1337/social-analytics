@@ -50,3 +50,45 @@ async function runCrawlNow() {
         output.textContent = 'Lỗi: ' + error;
     }
 }
+
+// Nhập Excel. Gửi bằng fetch chứ không phải form submit để hiện kết quả ngay tại chỗ —
+// import "chịu lỗi" nên phần errors mới là thứ đáng xem.
+async function importExcel() {
+    const input = document.getElementById('importFile');
+    const output = document.getElementById('importResult');
+
+    if (!input.files.length) {
+        output.textContent = 'Chưa chọn file.';
+        return;
+    }
+
+    const body = new FormData();
+    body.append('file', input.files[0]);
+    output.textContent = 'Đang nhập...';
+
+    try {
+        const response = await fetch('/api/v1/import-posts', {
+            method: 'POST',
+            // Không đặt Content-Type: trình duyệt tự thêm boundary cho multipart.
+            headers: { 'X-XSRF-TOKEN': csrfToken(), 'Accept': 'application/json' },
+            body: body
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            output.textContent = 'Lỗi: ' + (data.error ? data.error.message : response.status);
+            return;
+        }
+
+        let text = 'Đọc ' + data.totalRows + ' dòng — '
+            + data.imported + ' bài đã lưu, ' + data.skipped + ' bỏ qua.';
+        if (data.errors.length) {
+            text += '\n\nCác dòng bị bỏ:\n'
+                + data.errors.map(e => '  dòng ' + e.rowNumber + ': ' + e.message).join('\n');
+        }
+        output.textContent = text;
+        input.value = '';
+    } catch (error) {
+        output.textContent = 'Lỗi: ' + error;
+    }
+}

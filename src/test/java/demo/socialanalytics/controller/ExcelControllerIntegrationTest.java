@@ -182,6 +182,41 @@ class ExcelControllerIntegrationTest {
                 .value(org.hamcrest.Matchers.containsString(".xlsx")));
     }
 
+    // Form trên dashboard không gửi userId; lấy từ phiên đăng nhập.
+    @Test
+    void thieuUserIdThiLayNguoiDangDangNhap() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "posts.xlsx", null,
+            ExcelTestFiles.postsFile(List.of(List.of("facebook", "fb-auth", "Bài", "", ""))));
+
+        mvc.perform(MockMvcRequestBuilders.multipart("/api/v1/import-posts")
+                .file(file)
+                .contextPath("/api/v1").servletPath("/import-posts")
+                .with(csrf())
+                .with(org.springframework.security.test.web.servlet.request
+                    .SecurityMockMvcRequestPostProcessors.oauth2Login()
+                    .attributes(attrs -> attrs.put("userId", admin.getId()))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.imported").value(1));
+
+        assertThat(posts.findAll()).singleElement()
+            .satisfies(post -> assertThat(post.getUser().getId()).isEqualTo(admin.getId()));
+    }
+
+    // Không có userId mà cũng không xác định được từ phiên -> báo lỗi rõ ràng.
+    @Test
+    void thieuUserIdVaKhongCoPhienThiTraVe400() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "posts.xlsx", null,
+            ExcelTestFiles.postsFile(List.of(List.of("facebook", "fb-1", "Bài", "", ""))));
+
+        mvc.perform(MockMvcRequestBuilders.multipart("/api/v1/import-posts")
+                .file(file)
+                .contextPath("/api/v1").servletPath("/import-posts")
+                .with(csrf()))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.message")
+                .value(org.hamcrest.Matchers.containsString("userId")));
+    }
+
     @Test
     void nguoiDungKhongTonTaiThiTraVe404() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "posts.xlsx", null,

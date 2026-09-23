@@ -57,7 +57,7 @@ CRAWL_INITIAL_DELAY=PT10S CRAWL_INTERVAL=PT60S ./mvnw spring-boot:run
 | GET | `/metrics?postId=` | Lịch sử đo của một bài |
 | GET | `/metrics/series?postId=&from=&to=` | Chuỗi thời gian cho biểu đồ |
 | POST | `/metrics` | Ghi nhận một lần đo |
-| POST | `/import-posts?userId=` | Nhập bài viết từ Excel (multipart) |
+| POST | `/import-posts` | Nhập bài viết từ Excel (multipart); bỏ trống `userId` thì lấy người đang đăng nhập |
 | GET | `/export-report?platform=&from=&to=` | Xuất báo cáo `.xlsx` |
 | GET | `/export/models` | Model nào xuất được, cột gì |
 | GET | `/export/{model}` | Xuất model bất kỳ ra Excel |
@@ -71,7 +71,11 @@ CRAWL_INITIAL_DELAY=PT10S CRAWL_INTERVAL=PT60S ./mvnw spring-boot:run
 SOAP: `POST /soap` (`getPlatformSummary`, `getExchangeRate`), WSDL tại
 `/soap/socialAnalytics.wsdl`.
 
-Trang HTML: `/login`, `/dashboard`.
+Trang HTML: `/login`, `/dashboard` (có form nhập Excel, biểu đồ realtime, nút chạy job).
+
+File Excel mẫu để thử nhập: [`samples/mau-import-bai-viet.xlsx`](samples/mau-import-bai-viet.xlsx)
+— 5 dòng, trong đó 2 dòng cố tình sai để thấy cơ chế import chịu lỗi. Hai cột bắt buộc là
+`platform` và `externalId`; cột tìm theo tên nên thứ tự tuỳ ý.
 
 Mọi endpoint đều yêu cầu đăng nhập, trừ `/login` và `/soap`. Chưa đăng nhập thì API trả 401,
 trang HTML chuyển hướng về `/login`.
