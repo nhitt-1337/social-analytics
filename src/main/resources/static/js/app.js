@@ -58,12 +58,14 @@ async function importExcel() {
     const output = document.getElementById('importResult');
 
     if (!input.files.length) {
+        output.className = 'alert warn';
         output.textContent = 'Chưa chọn file.';
         return;
     }
 
     const body = new FormData();
     body.append('file', input.files[0]);
+    output.className = 'result';
     output.textContent = 'Đang nhập...';
 
     try {
@@ -76,15 +78,22 @@ async function importExcel() {
         const data = await response.json();
 
         if (!response.ok) {
+            output.className = 'alert error';
             output.textContent = 'Lỗi: ' + (data.error ? data.error.message : response.status);
             return;
         }
 
-        let text = 'Đọc ' + data.totalRows + ' dòng — '
-            + data.imported + ' bài đã lưu, ' + data.skipped + ' bỏ qua.';
+        // Bỏ qua vài dòng KHÔNG phải là thất bại: import chịu lỗi, dòng hỏng bị loại còn
+        // dòng đúng vẫn vào DB. Hiển thị phải nói rõ điều đó, nếu không nhìn như báo lỗi.
+        output.className = data.imported > 0 ? 'alert ok' : 'alert warn';
+        let text = data.imported > 0
+            ? '✓ Đã nhập ' + data.imported + '/' + data.totalRows + ' bài viết.'
+            : 'Không nhập được bài nào (' + data.totalRows + ' dòng).';
+
         if (data.errors.length) {
-            text += '\n\nCác dòng bị bỏ:\n'
-                + data.errors.map(e => '  dòng ' + e.rowNumber + ': ' + e.message).join('\n');
+            text += '\n\n' + data.errors.length + ' dòng được bỏ qua — các dòng còn lại '
+                + 'vẫn đã lưu bình thường:\n'
+                + data.errors.map(e => '  · dòng ' + e.rowNumber + ': ' + e.message).join('\n');
         }
         output.textContent = text;
         input.value = '';

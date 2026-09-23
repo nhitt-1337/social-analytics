@@ -76,3 +76,12 @@ input[type=file] {
     flex: 1; min-width: 220px; padding: 8px;
     border: 1px solid #ccd0d5; border-radius: 8px; background: #fff; font: inherit;
 }
+
+/* Kết quả nhập Excel: giữ xuống dòng như <pre> nhưng dùng màu của alert */
+pre.alert { white-space: pre-wrap; font: inherit; margin: 12px 0; }
+
+/* Nút phụ: viền nhạt, để nút chính nổi hơn */
+.btn-ghost {
+    background: #fff; color: #1c1e21; border: 1px solid #ccd0d5;
+}
+.btn-ghost:hover { background: #f0f2f5; }

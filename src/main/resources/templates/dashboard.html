@@ -34,12 +34,42 @@
         <code>postedAt</code>. Cột tìm theo tên nên thứ tự tuỳ ý.
         Bài viết sẽ thuộc về tài khoản đang đăng nhập.
     </p>
+    <p class="muted">
+        Dòng sai định dạng hoặc trùng bài đã có sẽ bị bỏ qua và liệt kê lý do — các dòng còn lại
+        vẫn được lưu. File mẫu <code>samples/mau-import-bai-viet.xlsx</code> có sẵn 2 dòng sai
+        để thử điều này.
+    </p>
 
     <div class="row">
         <input type="file" id="importFile" accept=".xlsx,.xls">
         <button class="btn" type="button" onclick="importExcel()">Nhập</button>
     </div>
     <pre id="importResult" class="result"></pre>
+
+    <hr>
+
+    <h2>Xuất Excel</h2>
+    <p class="muted">
+        Tải về ngay, không cần chờ. Hai nhóm dưới đây đi bằng hai đường khác nhau:
+        <em>báo cáo tương tác</em> có cột khai tường minh bằng <code>@ExcelColumn</code>;
+        các model còn lại để Reflection tự suy ra cột từ chính lớp Java.
+    </p>
+
+    <div class="row">
+        <!-- GET nên không cần token CSRF. Trình duyệt tự tải file nhờ header
+             Content-Disposition: attachment do server đặt. -->
+        <a class="btn" th:href="@{/export-report}">Báo cáo tương tác</a>
+        <a class="btn btn-ghost" th:href="@{/export/posts}">Bài viết</a>
+        <a class="btn btn-ghost" th:href="@{/export/statistics}">Thống kê</a>
+        <a class="btn btn-ghost" th:href="@{/export/crawl-runs}">Lịch sử job</a>
+        <a class="btn btn-ghost" th:href="@{/export/dead-letters}">Thư chết</a>
+    </div>
+
+    <p class="muted">
+        Lọc báo cáo theo nền tảng:
+        <a th:href="@{/export-report(platform='facebook')}">chỉ Facebook</a> ·
+        <a th:href="@{/export-report(platform='twitter')}">chỉ Twitter</a>
+    </p>
 
     <hr>
 
